@@ -9,7 +9,8 @@
 /*                      Verified Insertion Sort in Dafny                      */
 /* -------------------------------------------------------------------------- */
 
-/*
+/*/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
   This module contains a verified implementation of insertion sort in the programming language Dafny.
   The algorithm itself strictly follows the pseudocode available at <https://en.wikipedia.org/wiki/Insertion_sort>.
   The verification was the hard part.
@@ -18,7 +19,8 @@
 
     dafny verify --standard-libraries --cores 16 --resource-limit 3000000 InsertionSort.dfy
   
-*/
+
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
 module InsertionSort {
   export
