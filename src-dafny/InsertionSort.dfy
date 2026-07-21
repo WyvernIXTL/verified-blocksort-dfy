@@ -5,11 +5,9 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-/* -------------------------------------------------------------------------- */
-/*                      Verified Insertion Sort in Dafny                      */
-/* -------------------------------------------------------------------------- */
-
 /*/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+
+  Verified Insertion Sort in Dafny
 
   This module contains a verified implementation of insertion sort in the programming language Dafny.
   The algorithm itself strictly follows the pseudocode available at <https://en.wikipedia.org/wiki/Insertion_sort>.
@@ -21,6 +19,7 @@
   
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
+
 
 module InsertionSort {
   export
