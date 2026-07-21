@@ -11,11 +11,12 @@
 
   This module contains a verified implementation of insertion sort in the programming language Dafny.
   The algorithm itself strictly follows the pseudocode available at <https://en.wikipedia.org/wiki/Insertion_sort>.
-  The verification was the hard part.
+  While the algorithm itself is simple, the verification was quite a torture. The verification of 
+  `InsertionSortInnerLoop` is somewhat variable.
 
   Dafny v4.11.0 was used for writing this code. To verify this code execute dafny with:
 
-    dafny verify --standard-libraries --cores 16 --resource-limit 3000000 InsertionSort.dfy
+    dafny verify --standard-libraries --cores 100% --resource-limit 3000000 InsertionSort.dfy
   
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
@@ -23,7 +24,7 @@
 
 module InsertionSort {
   export
-    provides InsertionSort, Relations
+    provides InsertionSortSubarray, InsertionSort, Relations
 
   import opened Relations = Std.Relations
 
@@ -54,8 +55,8 @@ module InsertionSort {
   {
     var x := a[i];
     var j := i;
-    ghost var snap := a[..];
 
+    ghost var snap := a[..];
     SortedPrefix(leq, a[lo..j], snap[lo..i]);
 
     while j > lo && !leq(a[j-1], x)
@@ -80,33 +81,31 @@ module InsertionSort {
     assert a[lo..i+1] == a[lo..j] + [a[j]] +  a[j+1..i+1];
   }
 
-  method InsertionSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+  method InsertionSortSubarray<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
     modifies a
     requires TotalOrdering(leq)
     requires lo < hi <= a.Length
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[lo..hi])
   {
-    var i := lo + 1;
-
-    while i < hi
-      invariant i <= hi
-      invariant lo < i <= a.Length
+    for i := lo + 1 to hi
       invariant multiset(a[..]) == multiset(old(a[..]))
       invariant SortedBy(leq, a[lo..i])
     {
       InsertionSortInnerLoop(leq, a, lo, i);
-      i := i + 1;
     }
   }
 
-  method InsertionSortA<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
+  method InsertionSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
     modifies a
     requires TotalOrdering(leq)
-    requires 0 < a.Length
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[..])
   {
-    InsertionSort(leq, a, 0, a.Length);
+    if a.Length == 0 {
+      return;
+    }
+
+    InsertionSortSubarray(leq, a, 0, a.Length);
   }
 }
