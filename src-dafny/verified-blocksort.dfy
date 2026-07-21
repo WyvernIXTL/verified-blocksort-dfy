@@ -30,7 +30,7 @@ lemma CombineSort<A(!new)>(leq: (A, A) -> bool, pre: seq<A>, x: A, post: seq<A>)
   ensures SortedBy(leq, pre + [x] + post)
 {}
 
-method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, i: nat)
+method {:isolate_assertions} InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, i: nat)
   modifies a
   requires TotalOrdering(leq)
   requires lo+1 < i < a.Length
@@ -40,23 +40,24 @@ method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo:
 {
   var x := a[i];
   var j := i;
+  ghost var snap := a[..];
 
-  SortedPrefix(leq, a[lo..j], old(a[lo..i]));
+  SortedPrefix(leq, a[lo..j], snap[lo..i]);
 
   while j > lo && !leq(a[j-1], x)
     invariant lo <= j <= i < a.Length
-    invariant a[..j+1] == old(a[..j+1])
-    invariant a[i+1..] == old(a[i+1..])
-    invariant a[j+1..i+1] == old(a[j..i])
+    invariant a[..j+1] == snap[..j+1]
+    invariant a[i+1..] == snap[i+1..]
+    invariant a[j+1..i+1] == snap[j..i]
     invariant SortedBy(leq, a[lo..j])
     invariant SortedBy(leq, a[j+1..i+1])
     invariant forall y | j+1 <= y < i+1 :: leq(x, a[y])
-    invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(old(a[..]))
+    invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(snap)
   {
     a[j] := a[j-1];
     j := j - 1;
 
-    SortedPrefix(leq, a[lo..j], old(a[lo..i]));
+    SortedPrefix(leq, a[lo..j], snap[lo..i]);
   }
 
   a[j] := x;
