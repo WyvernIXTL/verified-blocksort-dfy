@@ -36,6 +36,7 @@ method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo:
   requires lo+1 < i < a.Length
   requires SortedBy(leq, a[lo..i])
   ensures SortedBy(leq, a[lo..i+1])
+  ensures multiset(a[..]) == multiset(old(a[..]))
 {
   var x := a[i];
   var j := i;
@@ -50,6 +51,7 @@ method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo:
     invariant SortedBy(leq, a[lo..j])
     invariant SortedBy(leq, a[j+1..i+1])
     invariant forall y | j+1 <= y < i+1 :: leq(x, a[y])
+    invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(old(a[..]))
   {
     a[j] := a[j-1];
     j := j - 1;
@@ -61,7 +63,6 @@ method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo:
 
   CombineSort(leq, a[lo..j], a[j], a[j+1..i+1]);
   assert a[lo..i+1] == a[lo..j] + [a[j]] +  a[j+1..i+1];
-  assert SortedBy(leq, a[lo..i+1]);
 }
 
 
