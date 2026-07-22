@@ -83,34 +83,26 @@ module InsertionSortModule {
     }
   }
 
-  // Sort part of an array with insertion sort
-  method InsertionSortSubarrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+  // Sort part of an array with insertion sort.
+  // 
+  // If no upper or lower bound is given, the entire array will be sorted.
+  method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat := 0, hi: nat := a.Length)
     modifies a
     requires TotalOrdering(leq)
-    requires lo < hi <= a.Length
+    requires lo <= hi <= a.Length
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[lo..hi])
   {
+    if lo == hi {
+      return;
+    }
+
     for i := lo + 1 to hi
       invariant multiset(a[..]) == multiset(old(a[..]))
       invariant SortedBy(leq, a[lo..i])
     {
       InsertionSortInnerLoopImpl.InsertionSortInnerLoop(leq, a, lo, i);
     }
-  }
-
-  // Sort an array with insertion sort
-  method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
-    modifies a
-    requires TotalOrdering(leq)
-    ensures multiset(a[..]) == multiset(old(a[..]))
-    ensures SortedBy(leq, a[..])
-  {
-    if a.Length == 0 {
-      return;
-    }
-
-    InsertionSortSubarrayBy(leq, a, 0, a.Length);
   }
 
   method InsertionSortSeqBy<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>) returns (r: seq<A>)
