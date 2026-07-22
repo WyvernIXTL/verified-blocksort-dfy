@@ -209,9 +209,9 @@ module InsertionSortUnbounded {
   reasoning and also uses this optimization. The translation should not use big integers as indices.
 
   I tested the JavaScript translation (Dafny 4.11.0): 
-  `UINT32_MAX` produces a `num` which is correct and wanted, while  `UINT64_MAX` sadly produces big ints. But this
-  is actually not a real issue for insertion sort, as insertion sort is only efficient or preferable to other 
-  sorting algorithms on very small arrays.
+  `UINT32_MAX` produces a `number` which is correct and wanted, while `UINT64_MAX` sadly produces big ints. 
+  But this is actually not a real issue for insertion sort, as insertion sort is only efficient or preferable to 
+  other sorting algorithms on very small arrays.
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
