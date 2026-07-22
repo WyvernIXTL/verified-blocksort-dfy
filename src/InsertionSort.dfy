@@ -22,11 +22,11 @@
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
 
-module InsertionSortM {
+module InsertionSortModule {
   import opened Std.Relations
 
   // Implementation details of the inner loop
-  module Impl {
+  module InsertionSortInnerLoopImpl {
     import opened Std.Relations
 
     lemma SortedPrefix<A(!new)>(leq: (A, A) -> bool, p: seq<A>, a: seq<A>)
@@ -94,7 +94,7 @@ module InsertionSortM {
       invariant multiset(a[..]) == multiset(old(a[..]))
       invariant SortedBy(leq, a[lo..i])
     {
-      Impl.InsertionSortInnerLoop(leq, a, lo, i);
+      InsertionSortInnerLoopImpl.InsertionSortInnerLoop(leq, a, lo, i);
     }
   }
 

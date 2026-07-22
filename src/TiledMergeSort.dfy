@@ -8,16 +8,10 @@
 
 
 
-module HybridMergeSort {
+module TiledMergeSortM {
   import opened Std.Relations
 
-  import opened InsertionSortM
-
-  method {:test} Test() {
-    var a: array<int> := new int[][8, 4, 1, 2, 5, 6];
-    InsertionSort((x, y) => x <= y, a);
-    // assert a[..] == [1, 2, 4, 5, 6, 8];
-  }
+  import opened InsertionSortModule
 
 }
 
