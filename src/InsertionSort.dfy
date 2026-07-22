@@ -83,7 +83,7 @@ module InsertionSortModule {
   }
 
   // Sort part of an array with insertion sort
-  method InsertionSortSubarray<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+  method InsertionSortSliceBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
     modifies a
     requires TotalOrdering(leq)
     requires lo < hi <= a.Length
@@ -99,7 +99,7 @@ module InsertionSortModule {
   }
 
   // Sort an array with insertion sort
-  method InsertionSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
+  method InsertionSortBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
     modifies a
     requires TotalOrdering(leq)
     ensures multiset(a[..]) == multiset(old(a[..]))
@@ -109,6 +109,6 @@ module InsertionSortModule {
       return;
     }
 
-    InsertionSortSubarray(leq, a, 0, a.Length);
+    InsertionSortSliceBy(leq, a, 0, a.Length);
   }
 }
