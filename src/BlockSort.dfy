@@ -64,15 +64,15 @@ module BlockSortUnbound {
     {
       CopySubarray(a, lo, mid, cache);
 
-      var left_i := 0;
-      var left_bound := mid-lo;
-      var right_i := mid;
-      var right_bound := hi;
-      var target_i := lo;
+      var left_i: nat := 0;
+      var left_bound: nat := mid-lo;
+      var right_i: nat := mid;
+      var right_bound: nat := hi;
+      var target_i: nat := lo;
 
       while left_i < left_bound && right_i < right_bound
         invariant left_i <= left_bound && right_i <= right_bound
-        invariant lo <= target_i <= hi
+        invariant lo <= target_i < hi <= a.Length // ?
       {
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
@@ -84,12 +84,18 @@ module BlockSortUnbound {
         target_i := target_i + 1;
       }
 
-      while left_i < left_bound {
+      while left_i < left_bound
+        invariant left_i <= left_bound
+        invariant lo <= target_i <= hi
+      {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
         target_i := target_i + 1;
       }
-      while right_i < right_bound {
+      while right_i < right_bound
+        invariant right_i <= right_bound
+        invariant lo <= target_i <= hi
+      {
         a[target_i] := a[right_i];
         right_i := right_i + 1;
         target_i := target_i + 1;
