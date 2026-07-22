@@ -69,10 +69,12 @@ module BlockSortUnbound {
       var right_i: nat := mid;
       var right_bound: nat := hi;
       var target_i: nat := lo;
+      var target_bound: nat := hi;
 
       while left_i < left_bound && right_i < right_bound
         invariant left_i <= left_bound && right_i <= right_bound
-        invariant lo <= target_i < hi <= a.Length // ?
+        invariant left_i + (right_i - mid) == target_i - lo
+        invariant lo <= target_i < target_bound
       {
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
@@ -86,7 +88,8 @@ module BlockSortUnbound {
 
       while left_i < left_bound
         invariant left_i <= left_bound
-        invariant lo <= target_i <= hi
+        invariant left_i + (right_i - mid) == target_i - lo
+        invariant lo <= target_i <= target_bound
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
@@ -94,7 +97,8 @@ module BlockSortUnbound {
       }
       while right_i < right_bound
         invariant right_i <= right_bound
-        invariant lo <= target_i <= hi
+        invariant left_i + (right_i - mid) == target_i - lo
+        invariant lo <= target_i <= target_bound
       {
         a[target_i] := a[right_i];
         right_i := right_i + 1;
