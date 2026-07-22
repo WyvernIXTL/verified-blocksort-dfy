@@ -75,6 +75,8 @@ module BlockSortUnbound {
         invariant left_i <= left_bound && right_i <= right_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i < target_bound
+        invariant 0 < target_i ==> (0 < left_i && right_i < a.Length ==> leq(a[target_i-1], cache[left_i-1]) && leq(a[target_i-1], a[right_i])) || (0 < right_i ==> leq(a[target_i-1], cache[left_i]) && leq(a[target_i-1], a[right_i-1])) // ?
+        invariant SortedBy(leq, a[lo..target_i])
       {
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
@@ -90,6 +92,7 @@ module BlockSortUnbound {
         invariant left_i <= left_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
+        invariant SortedBy(leq, a[lo..target_i])
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
@@ -99,6 +102,7 @@ module BlockSortUnbound {
         invariant right_i <= right_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
+        invariant SortedBy(leq, a[lo..target_i])
       {
         a[target_i] := a[right_i];
         right_i := right_i + 1;
