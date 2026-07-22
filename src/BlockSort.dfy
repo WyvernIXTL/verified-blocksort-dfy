@@ -28,13 +28,13 @@
 module BlockSort {
   import opened Std.Relations
 
-  import opened InsertionSortModule
+  import opened InsertionSortUnbounded
 
 
   module BlockSortImpl {
     import opened Std.Relations
 
-    import opened InsertionSortModule
+    import opened InsertionSortUnbounded
 
 
   }
