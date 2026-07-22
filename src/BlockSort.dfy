@@ -50,16 +50,51 @@ module BlockSortUnbound {
       }
     }
 
-    method Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+    method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
       modifies cache
+      requires a != cache
       requires TotalOrdering(leq)
       requires lo < mid < hi <= a.Length
       requires SortedBy(leq, a[lo..mid])
       requires SortedBy(leq, a[mid..hi])
       requires a.Length <= cache.Length
       ensures SortedBy(leq, a[lo..hi])
-    // ensures multiset(a[lo..hi]) == multiset(old(a[lo..hi]))
+      // ensures multiset(a[lo..hi]) == multiset(old(a[lo..hi]))
+    {
+      CopySubarray(a, lo, mid, cache);
+
+      var left_i := 0;
+      var left_bound := mid-lo;
+      var right_i := mid;
+      var right_bound := hi;
+      var target_i := lo;
+
+      while left_i < left_bound && right_i < right_bound
+        invariant left_i <= left_bound && right_i <= right_bound
+        invariant lo <= target_i <= hi
+      {
+        if leq(cache[left_i], a[right_i]) {
+          a[target_i] := cache[left_i];
+          left_i := left_i + 1;
+        } else {
+          a[target_i] := a[right_i];
+          right_i := right_i + 1;
+        }
+        target_i := target_i + 1;
+      }
+
+      while left_i < left_bound {
+        a[target_i] := cache[left_i];
+        left_i := left_i + 1;
+        target_i := target_i + 1;
+      }
+      while right_i < right_bound {
+        a[target_i] := a[right_i];
+        right_i := right_i + 1;
+        target_i := target_i + 1;
+      }
+    }
 
   }
 
