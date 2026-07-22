@@ -26,7 +26,7 @@ module InsertionSortModule {
   import opened Std.Relations
   import Std.Collections.Seq
 
-  // Implementation details of the inner loop
+  // Implementation details of the inner loop.
   module InsertionSortInnerLoopImpl {
     import opened Std.Relations
 
@@ -105,6 +105,7 @@ module InsertionSortModule {
     }
   }
 
+  // Returns a with insertion sort sorted sequence.
   method InsertionSortSeqBy<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>) returns (r: seq<A>)
     requires TotalOrdering(leq)
     ensures multiset(a) == multiset(r)
