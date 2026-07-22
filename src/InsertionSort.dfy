@@ -24,6 +24,7 @@
 
 module InsertionSortModule {
   import opened Std.Relations
+  import Std.Collections.Seq
 
   // Implementation details of the inner loop
   module InsertionSortInnerLoopImpl {
@@ -83,7 +84,7 @@ module InsertionSortModule {
   }
 
   // Sort part of an array with insertion sort
-  method InsertionSortSliceBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+  method InsertionSortSubarrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
     modifies a
     requires TotalOrdering(leq)
     requires lo < hi <= a.Length
@@ -99,7 +100,7 @@ module InsertionSortModule {
   }
 
   // Sort an array with insertion sort
-  method InsertionSortBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
+  method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
     modifies a
     requires TotalOrdering(leq)
     ensures multiset(a[..]) == multiset(old(a[..]))
@@ -109,6 +110,17 @@ module InsertionSortModule {
       return;
     }
 
-    InsertionSortSliceBy(leq, a, 0, a.Length);
+    InsertionSortSubarrayBy(leq, a, 0, a.Length);
+  }
+
+  method InsertionSortSeqBy<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>) returns (r: seq<A>)
+    requires TotalOrdering(leq)
+    ensures multiset(a) == multiset(r)
+    ensures SortedBy(leq, r)
+  {
+    var arr := Seq.ToArray(a);
+    assert arr[..] == a;
+    InsertionSortArrayBy(leq, arr);
+    r := arr[..];
   }
 }
