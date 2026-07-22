@@ -28,8 +28,8 @@
   Verified Insertion Sort in Dafny
 
   This module contains methods that check the size of the input array or slice and either call a bounded variant of 
-  the algorithm, where the indices are bounded by `UINT64_MAX`, or the unbounded variant. In practice, the bounded 
-  variant will always be called, as an array bounded by `UINT64_MAX` is extremely large.
+  the algorithm, where the indices are bounded by `UINT32_MAX`, or the unbounded variant. In practice, the bounded 
+  variant will always be called, as an array bounded by `UINT32_MAX` is quite large.
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
@@ -37,7 +37,7 @@ module InsertionSortAdaptive {
   import opened Std.Relations
   import Std.Collections.Seq
   import opened Std.BoundedInts
-  import InsertionSortBoundedU64
+  import InsertionSortBoundedU32
   import InsertionSortUnbounded
 
   // Sort part of an array (`a[lo..hi]`) with insertion sort.
@@ -48,8 +48,8 @@ module InsertionSortAdaptive {
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[lo..hi])
   {
-    if a.Length <= UINT64_MAX as int {
-      InsertionSortBoundedU64.InsertionSortSubarrayBy(leq, a, lo as uint64, hi as uint64);
+    if a.Length <= UINT32_MAX as int {
+      InsertionSortBoundedU32.InsertionSortSubarrayBy(leq, a, lo as uint32, hi as uint32);
     } else {
       InsertionSortUnbounded.InsertionSortSubarrayBy(leq, a, lo, hi);
     }
@@ -62,8 +62,8 @@ module InsertionSortAdaptive {
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[..])
   {
-    if a.Length <= UINT64_MAX as int {
-      InsertionSortBoundedU64.InsertionSortArrayBy(leq, a);
+    if a.Length <= UINT32_MAX as int {
+      InsertionSortBoundedU32.InsertionSortArrayBy(leq, a);
     } else {
       InsertionSortUnbounded.InsertionSortArrayBy(leq, a);
     }
@@ -75,8 +75,8 @@ module InsertionSortAdaptive {
     ensures multiset(a) == multiset(r)
     ensures SortedBy(leq, r)
   {
-    if |a| <= UINT64_MAX as int {
-      r := InsertionSortBoundedU64.InsertionSortSeqBy(leq, a);
+    if |a| <= UINT32_MAX as int {
+      r := InsertionSortBoundedU32.InsertionSortSeqBy(leq, a);
     } else {
       r := InsertionSortUnbounded.InsertionSortSeqBy(leq, a);
     }
@@ -206,11 +206,16 @@ module InsertionSortUnbounded {
   integers as indices. This means that the array size is also bound. When looking at 
   <https://github.com/aws/aws-database-encryption-sdk-dynamodb/blob/a82094c6ad32f64db21d6231e74231d55e61016c/DynamoDbEncryption/dafny/StructuredEncryption/src/OptimizedMergeSort.dfy>
   I read, "Second, is has a bounded number implementation that avoids using `nat`." This module follows this 
-  reasoning and also uses this optimization. The translation should not use big integers as indices, but rather u64.
+  reasoning and also uses this optimization. The translation should not use big integers as indices.
+
+  I tested the JavaScript translation (Dafny 4.11.0): 
+  `UINT32_MAX` produces a `num` which is correct and wanted, while  `UINT64_MAX` sadly produces big ints. But this
+  is actually not a real issue for insertion sort, as insertion sort is only efficient or preferable to other 
+  sorting algorithms on very small arrays.
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
-module InsertionSortBoundedU64 {
+module InsertionSortBoundedU32 {
   import opened Std.Relations
   import Std.Collections.Seq
   import opened Std.BoundedInts
@@ -236,10 +241,10 @@ module InsertionSortBoundedU64 {
       ensures SortedBy(leq, pre + [x] + post)
     {}
 
-    method {:isolate_assertions} InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint64, i: uint64)
+    method {:isolate_assertions} InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, i: uint32)
       modifies a
       requires TotalOrdering(leq)
-      requires a.Length <= UINT64_MAX as int
+      requires a.Length <= UINT32_MAX as int
       requires lo as int < i as int < a.Length
       requires SortedBy(leq, a[lo..i])
       ensures SortedBy(leq, a[lo..i+1])
@@ -275,10 +280,10 @@ module InsertionSortBoundedU64 {
   }
 
   // Sort part of an array (`a[lo..hi]`) with insertion sort.
-  method InsertionSortSubarrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint64, hi: uint64)
+  method InsertionSortSubarrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, hi: uint32)
     modifies a
     requires TotalOrdering(leq)
-    requires a.Length <= UINT64_MAX as int
+    requires a.Length <= UINT32_MAX as int
     requires lo as int <= hi as int <= a.Length
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[lo..hi])
@@ -287,7 +292,7 @@ module InsertionSortBoundedU64 {
       return;
     }
 
-    for i: uint64 := lo + 1 to hi
+    for i: uint32 := lo + 1 to hi
       invariant multiset(a[..]) == multiset(old(a[..]))
       invariant SortedBy(leq, a[lo..i])
     {
@@ -299,17 +304,17 @@ module InsertionSortBoundedU64 {
   method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
     modifies a
     requires TotalOrdering(leq)
-    requires a.Length <= UINT64_MAX as int
+    requires a.Length <= UINT32_MAX as int
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[..])
   {
-    InsertionSortSubarrayBy(leq, a, 0, a.Length as uint64);
+    InsertionSortSubarrayBy(leq, a, 0, a.Length as uint32);
   }
 
   // Returns a with insertion sort sorted sequence.
   method InsertionSortSeqBy<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>) returns (r: seq<A>)
     requires TotalOrdering(leq)
-    requires |a| <= UINT64_MAX as int
+    requires |a| <= UINT32_MAX as int
     ensures multiset(a) == multiset(r)
     ensures SortedBy(leq, r)
   {
