@@ -1,0 +1,8 @@
+version: '3'
+
+tasks:
+  verify:
+    aliases:
+      - v
+    cmds:
+      - dafny verify dfyconfig.toml
