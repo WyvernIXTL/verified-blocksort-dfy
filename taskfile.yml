@@ -5,4 +5,4 @@ tasks:
     aliases:
       - v
     cmds:
-      - dafny verify dfyconfig.toml
+      - dafny verify dfyconfig.toml {{.CLI_ARGS}}

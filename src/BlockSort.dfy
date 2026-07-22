@@ -37,6 +37,19 @@ module BlockSortUnbound {
     import opened InsertionSortAdaptive
 
 
+    method CopySubarray<A(!new, ==)>(a: array<A>, lo: nat, hi: nat, b: array<A>)
+      modifies b
+      requires a != b
+      requires a.Length <= b.Length
+      requires lo < hi <= a.Length
+      ensures b[..hi-lo] == a[lo..hi]
+      // ensures forall i | 0 <= i < hi-lo :: b[i] == a[lo+i]
+    {
+      forall i | 0 <= i < hi-lo {
+        b[i] := a[lo+i];
+      }
+    }
+
     method Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
       modifies cache
