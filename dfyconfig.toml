@@ -1,0 +1,7 @@
+includes = ["src/**/*.dfy"]
+
+[options]
+enforce-determinism = true
+standard-libraries = true
+cores = "100%"
+resource-limit = 5000000
