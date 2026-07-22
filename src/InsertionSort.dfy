@@ -48,7 +48,7 @@ module InsertionSortAdaptive {
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[lo..hi])
   {
-    if a.Length < UINT64_MAX as int {
+    if a.Length <= UINT64_MAX as int {
       InsertionSortBoundedU64.InsertionSortSubarrayBy(leq, a, lo as uint64, hi as uint64);
     } else {
       InsertionSortUnbounded.InsertionSortSubarrayBy(leq, a, lo, hi);
@@ -62,7 +62,7 @@ module InsertionSortAdaptive {
     ensures multiset(a[..]) == multiset(old(a[..]))
     ensures SortedBy(leq, a[..])
   {
-    if a.Length < UINT64_MAX as int {
+    if a.Length <= UINT64_MAX as int {
       InsertionSortBoundedU64.InsertionSortArrayBy(leq, a);
     } else {
       InsertionSortUnbounded.InsertionSortArrayBy(leq, a);
@@ -75,7 +75,7 @@ module InsertionSortAdaptive {
     ensures multiset(a) == multiset(r)
     ensures SortedBy(leq, r)
   {
-    if |a| < UINT64_MAX as int {
+    if |a| <= UINT64_MAX as int {
       r := InsertionSortBoundedU64.InsertionSortSeqBy(leq, a);
     } else {
       r := InsertionSortUnbounded.InsertionSortSeqBy(leq, a);
