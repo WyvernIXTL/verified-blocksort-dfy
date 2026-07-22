@@ -25,7 +25,7 @@
 module InsertionSortM {
   import opened Std.Relations
 
-  // Implementation detail of the inner loop
+  // Implementation details of the inner loop
   module Impl {
     import opened Std.Relations
 
