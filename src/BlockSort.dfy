@@ -25,17 +25,28 @@
 
 
 
-module BlockSort {
+module BlockSortUnbound {
   import opened Std.Relations
 
-  import opened InsertionSortUnbounded
+  import opened InsertionSortAdaptive
 
 
-  module BlockSortImpl {
+  module BlockSortUnboundImpl {
     import opened Std.Relations
 
-    import opened InsertionSortUnbounded
+    import opened InsertionSortAdaptive
 
+
+    method Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+      modifies a
+      modifies cache
+      requires TotalOrdering(leq)
+      requires lo < mid < hi <= a.Length
+      requires SortedBy(leq, a[lo..mid])
+      requires SortedBy(leq, a[mid..hi])
+      requires a.Length <= cache.Length
+      ensures SortedBy(leq, a[lo..hi])
+    // ensures multiset(a[lo..hi]) == multiset(old(a[lo..hi]))
 
   }
 
