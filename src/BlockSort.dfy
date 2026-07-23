@@ -50,14 +50,6 @@ module BlockSortUnbound {
       }
     }
 
-    lemma MergeSortNext<A(!new)>(leq: (A, A) -> bool, a: seq<A>, x: A, y: A)
-      requires TotalOrdering(leq)
-      requires SortedBy(leq, a)
-      requires |a| > 1
-      requires leq(a[|a|-1], x) || leq(a[|a|-1], y)
-      ensures SortedBy(leq, a + [x]) || SortedBy(leq, a + [y])
-    {}
-
     lemma SortedImpliesLeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>, i: nat, j: nat)
       requires TotalOrdering(leq)
       requires SortedBy(leq, a)
@@ -91,6 +83,7 @@ module BlockSortUnbound {
       var target_i: nat := target_start;
       var target_bound: nat := hi;
 
+      // merging left with right
       while left_i < left_bound && right_i < right_bound
         // indices invariants
         invariant left_start <= left_i <= left_bound
@@ -104,10 +97,13 @@ module BlockSortUnbound {
         invariant SortedBy(leq, a[right_i..right_bound])
 
         // bridge: last placed element is <= both candidates
-        invariant target_i > target_start && left_i < left_bound ==>
-                    leq(a[target_i - 1], cache[left_i])
-        invariant target_i > target_start && right_i < right_bound ==>
-                    leq(a[target_i - 1], a[right_i])
+        invariant target_i > target_start ==>
+                    left_i < left_bound ==>
+                      leq(a[target_i - 1], cache[left_i])
+
+        invariant target_i > target_start ==>
+                    right_i < right_bound ==>
+                      leq(a[target_i - 1], a[right_i])
 
         // target
         invariant SortedBy(leq, a[target_start..target_i])
@@ -117,35 +113,61 @@ module BlockSortUnbound {
           left_i := left_i + 1;
         } else {
           a[target_i] := a[right_i];
+
           SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
+
           right_i := right_i + 1;
         }
 
         target_i := target_i + 1;
       }
 
+      // if right is exhausted copy left
       while left_i < left_bound
-        invariant left_i <= left_bound
-        invariant left_i + (right_i - mid) == target_i - lo
-        invariant lo <= target_i <= target_bound
+        // indices invariants
+        invariant left_start <= left_i <= left_bound
+        invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+        invariant target_start <= target_i <= target_bound
+
+        // left and right invariants
         invariant SortedBy(leq, cache[left_i..left_bound])
-        invariant target_i > target_start ==> (left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]))
         invariant a[right_i..right_bound] == snap[right_i..right_bound]
         invariant SortedBy(leq, a[right_i..right_bound])
-        invariant target_i > target_start ==> (right_i < right_bound ==> leq(a[target_i - 1], a[right_i]))
+
+        // bridge: last placed element is <= both candidates
+        invariant target_i > target_start ==>
+                    left_i < left_bound ==>
+                      leq(a[target_i - 1], cache[left_i])
+
+        invariant target_i > target_start ==>
+                    right_i < right_bound ==>
+                      leq(a[target_i - 1], a[right_i])
+
+        //target
         invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
         target_i := target_i + 1;
       }
+
+      // if left is exhausted copy right
       while right_i < right_bound
-        invariant right_i <= right_bound
-        invariant left_i + (right_i - mid) == target_i - lo
-        invariant lo <= target_i <= target_bound
+        // indices invariants
+        invariant right_start <= right_i <= right_bound
+        invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+        invariant target_start <= target_i <= target_bound
+
+        // left and right invariants
         invariant a[right_i..right_bound] == snap[right_i..right_bound]
         invariant SortedBy(leq, a[right_i..right_bound])
-        invariant target_i > target_start ==> (right_i < right_bound ==> leq(a[target_i - 1], a[right_i]))
+
+        // bridge: last placed element is <= both candidates
+        invariant target_i > target_start ==>
+                    right_i < right_bound ==>
+                      leq(a[target_i - 1], a[right_i])
+
+        //target
         invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := a[right_i];
