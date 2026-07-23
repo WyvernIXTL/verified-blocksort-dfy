@@ -174,12 +174,11 @@ module InsertionSortUnbounded {
   }
 
   // Sort an array with insertion sort.
-  method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat := 0, hi: nat := a.Length)
+  method InsertionSortArrayBy<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
     modifies a
     requires TotalOrdering(leq)
-    requires lo <= hi <= a.Length
     ensures multiset(a[..]) == multiset(old(a[..]))
-    ensures SortedBy(leq, a[lo..hi])
+    ensures SortedBy(leq, a[..])
   {
     InsertionSortSubarrayBy(leq, a, 0, a.Length);
   }
