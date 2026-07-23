@@ -196,20 +196,40 @@ module BlockSortUnbound {
         {
           if leq(snap_cache[snap_left_i], snap[snap_right_i]) {
             snap_2 := snap_2[snap_target_i := snap_cache[snap_left_i]];
+
+            assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i + 1..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
+              MultiSet5Slice(snap_2, target_start, snap_target_i + 1, snap_right_i, target_bound);
+              assert snap_2[target_start..snap_target_i] + [snap_cache[snap_left_i]] == snap_2[target_start..snap_target_i + 1];
+              assert [snap_cache[snap_left_i]] + snap_cache[snap_left_i + 1..left_bound] == snap_cache[snap_left_i..left_bound];
+              assert multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i + 1..left_bound]) == multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]);
+            }
+
             snap_left_i := snap_left_i + 1;
           } else {
             snap_2 := snap_2[snap_target_i := snap_2[snap_right_i]];
+
+            assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i + 1..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
+              MultiSet5Slice(snap_2, target_start, snap_target_i + 1, snap_right_i + 1, target_bound);
+              assert snap_2[target_start..snap_target_i] + [snap_2[snap_right_i]] == snap_2[target_start..snap_target_i + 1];
+              assert [snap_2[snap_right_i]] + snap_2[snap_right_i + 1..right_bound] == snap_2[snap_right_i..right_bound];
+              assert multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_2[snap_right_i + 1..right_bound]) == multiset(snap_2[target_start..snap_target_i]) + multiset(snap_2[snap_right_i..right_bound]);
+            }
+
             snap_right_i := snap_right_i + 1;
           }
 
           snap_target_i := snap_target_i + 1;
 
           assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
-            assert snap[lo+snap_left_i..right_start] == snap_cache[snap_left_i..left_bound];
-            assert multiset(snap[lo+snap_left_i..right_start]) == multiset(snap_cache[snap_left_i..left_bound]);
             MultiSet5Slice(snap_2, target_start, snap_target_i, snap_right_i, target_bound);
           }
         }
+
+        assert snap_left_i == left_i;
+        assert snap_right_i == right_i;
+        assert snap_target_i == target_i;
+        assert snap_2 == a[..];
+        assert snap_cache == cache[..];
       }
 
 
