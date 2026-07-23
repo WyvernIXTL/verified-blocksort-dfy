@@ -184,6 +184,83 @@ module BlockSortUnbound {
     }
 
 
+    lemma MainMergeLoopBranchAPreservesPermutationInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                         right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 <= right_start < right_bound <= a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start <= right_i < right_bound <= a.Length
+      requires (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires a[right_i..right_bound] == snap[right_i..right_bound]
+      requires multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+
+      requires target_start <= target_i + 1 <= right_i <= target_bound <= a.Length
+
+      // if branch condition and effects
+      requires a[target_i] == cache[left_i]
+
+      // Loop Invariant Ensure
+      ensures left_start <= left_i <= left_bound <= a.Length
+      ensures right_start <= right_i <= right_bound <= a.Length
+      ensures (left_i+1 - left_start) + (right_i - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i <= target_bound <= a.Length
+      ensures a[right_i+1..right_bound] == snap[right_i+1..right_bound]
+      ensures multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+    {
+      MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
+      assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+      HeadOfCache(cache, left_i, left_bound);
+      assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+    }
+
+    lemma MainMergeLoopBranchBPreservesPermutationInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                         right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 <= right_start < right_bound <= a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start <= right_i < right_bound <= a.Length
+      requires (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires a[right_i..right_bound] == snap[right_i..right_bound]
+      requires multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+
+      requires target_start <= target_i + 1 <= right_i + 1 <= target_bound <= a.Length
+
+      // if branch condition and effects
+      requires a[target_i] == a[right_i]
+
+      ensures left_start <= left_i <= left_bound <= a.Length
+      ensures right_start <= right_i+1 <= right_bound <= a.Length
+      ensures (left_i - left_start) + (right_i+1 - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i+1 <= target_bound <= a.Length
+      ensures a[right_i+1..right_bound] == snap[right_i+1..right_bound]
+      ensures multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+    {
+      assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
+      MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
+      HeadOfCache(a, right_i, right_bound);
+      assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
+    }
+
 
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
@@ -198,12 +275,9 @@ module BlockSortUnbound {
       requires a[lo..mid] == cache[0..mid-lo]
 
       ensures SortedBy(leq, a[lo..hi])
-      // ensures multiset(a[..]) == multiset(old(a[..]))
+      ensures multiset(a[..]) == multiset(old(a[..]))
     {
       ghost var snap := a[..];
-
-      // CopySubarray(a, lo, mid, cache);
-
       ghost var snap_cache := cache[..];
 
       var left_start: nat := 0;
@@ -217,11 +291,11 @@ module BlockSortUnbound {
       var target_bound: nat := hi;
 
 
-      // assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-      //   assert snap[target_i..right_i] == cache[left_i..left_bound];
-      //   assert multiset(snap[target_i..right_i]) == multiset(cache[left_i..left_bound]);
-      //   MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
-      // }
+      assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        assert snap[target_i..right_i] == cache[left_i..left_bound];
+        assert multiset(snap[target_i..right_i]) == multiset(cache[left_i..left_bound]);
+        MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+      }
 
       // merging left with right
       while left_i < left_bound && right_i < right_bound
@@ -245,122 +319,55 @@ module BlockSortUnbound {
                     right_i < right_bound ==>
                       leq(a[target_i - 1], a[right_i])
 
-        // target
+        // is sorted
         invariant SortedBy(leq, a[target_start..target_i])
 
-        // is permutation invariant
-        // invariant multiset(a[..target_start]) == multiset(snap[..target_start])
-        // invariant multiset(a[target_bound..]) == multiset(snap[target_bound..])
-        // invariant multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound])
-        // invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+        // is permutation
+        invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
       {
-        ghost var left;
-
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
 
-          // assert leq(a[target_i], cache[left_i]);
-          // assert leq(a[target_i], a[right_i]);
+          assert target_i+1 > target_start ==> left_i+1 < left_bound ==> leq(a[target_i], cache[left_i+1]) by {
+            MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          // assert SortedBy(leq, a[target_start..target_i+1]) by {
-          //   SortedImpliesLeq(leq, cache[left_i..left_bound], 0, (if left_i + 1 < left_bound then 1 else 0));
-          //   assert leq(a[target_i], cache[left_i]);
-          //   assert leq(a[target_i], a[right_i]);
-          // }
+          assert  target_i+1 > target_start ==> right_i < right_bound ==> leq(a[target_i], a[right_i]) by {
+            MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          // assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-          //   MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
-          //   assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
-          //   HeadOfCache(cache, left_i, left_bound);
-          //   assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
-          // }
+          assert SortedBy(leq, a[target_start..target_i+1]) by {
+            MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-          assert SortedBy(leq, a[target_start..target_i + 1]);
+          assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by{
+            MainMergeLoopBranchAPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
           target_i := target_i + 1;
           left_i := left_i + 1;
-
-
-
-          left := true;
         } else {
           a[target_i] := a[right_i];
 
-          // SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
+          assert target_i+1 > target_start ==> left_i < left_bound ==> leq(a[target_i], cache[left_i]) by {
+            MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          // assert SortedBy(leq, a[target_start..target_i+1]) by {
-          //   SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
-          //   assert leq(a[target_i], cache[left_i]);
-          //   assert leq(a[target_i], a[right_i]);
-          // }
+          assert target_i+1 > target_start ==> right_i+1 < right_bound ==> leq(a[target_i], a[right_i+1]) by {
+            MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          // assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i + 1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-          //   MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
-          //   assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
-          //   HeadOfCache(a, right_i, right_bound);
-          //   assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
-          // }
+          assert SortedBy(leq, a[target_start..target_i+1]) by {
+            MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
-          MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-          assert SortedBy(leq, a[target_start..target_i+1]);
+          assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+            MainMergeLoopBranchBPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          }
 
           target_i := target_i + 1;
           right_i := right_i + 1;
-
-
-          left := false;
         }
-
-        // target_i := target_i + 1;
-
-        // assert Assignment: a[target_i-1] == (if left then cache[left_i-1] else a[right_i-1]);
-
-        // assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]) by {
-        //   // assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-        //   if left {
-        //     assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) == multiset(a[target_start..target_i-1]) + multiset(cache[left_i-1..left_bound]) by {
-        //       reveal Assignment;
-        //       assert a[target_start..target_i-1] + [cache[left_i-1]] == a[target_start..target_i] by {
-        //         TailOfTarget(a, target_start, target_i);
-        //       }
-        //       assert [cache[left_i-1]] + cache[left_i..left_bound] == cache[left_i-1..left_bound] by {
-        //         HeadOfCache(cache, left_i-1, left_bound);
-        //       }
-        //     }
-        //     MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
-        //     assert multiset(a[target_start..target_i-1]) + multiset(cache[left_i-1..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]);
-        //     assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]);
-        //   } else {
-        //     assert multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]) == multiset(a[target_start..target_i-1]) + multiset(a[right_i-1..right_bound]) by {
-        //       reveal Assignment;
-        //       assert a[target_start..target_i-1] + [a[right_i-1]] == a[target_start..target_i] by {
-        //         TailOfTarget(a, target_start, target_i);
-        //       }
-        //       assert [a[right_i-1]] + a[right_i..right_bound] == a[right_i-1..right_bound] by {
-        //         HeadOfCache(a, right_i-1, right_bound);
-        //       }
-        //     }
-        //     MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
-        //     assert multiset(a[target_start..target_i-1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i-1..right_bound]) == multiset(snap[target_start..target_bound]);
-        //     MultiSet5Slice(a[..], target_start, target_i-1, right_i-1, target_bound);
-        //     assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]);
-        //   }
-
-        //   assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]);
-        // }
-
-        // assert SortedBy(leq, a[target_start..target_i]) by {
-        //   if left {
-        //     SortedImpliesLeq(leq, cache[left_i-1..left_bound], 0, (if left_i < left_bound then 1 else 0));
-        //     assert leq(a[target_i-1], cache[left_i-1]);
-        //     assert leq(a[target_i-1], a[right_i]);
-        //   } else {
-        //     SortedImpliesLeq(leq, a[right_i-1..right_bound], 0, (if right_i < right_bound then 1 else 0));
-        //     assert leq(a[target_i-1], cache[left_i]);
-        //     assert leq(a[target_i-1], a[right_i-1]);
-        //   }
-        // }
       }
 
 
