@@ -151,31 +151,36 @@ module BlockSortUnbound {
         target_i := target_i + 1;
       }
 
-      // if left is exhausted copy right
-      while right_i < right_bound
-        // indices invariants
-        invariant right_start <= right_i <= right_bound
-        invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
-        invariant target_start <= target_i <= target_bound
+      // if left is exhausted assert goal by asserting right side is allready in place
+      assert SortedBy(leq, a[target_start..target_bound]) by {
+        var right_i := right_i;
+        var target_i := target_i;
 
-        // left and right invariants
-        invariant a[right_i..right_bound] == snap[right_i..right_bound]
-        invariant SortedBy(leq, a[right_i..right_bound])
+        while right_i < right_bound
+          // indices invariants
+          invariant right_start <= right_i <= right_bound
+          invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+          invariant target_start <= target_i <= target_bound
 
-        // bridge: last placed element is <= both candidates
-        invariant target_i > target_start ==>
-                    right_i < right_bound ==>
-                      leq(a[target_i - 1], a[right_i])
+          // left and right invariants
+          invariant a[right_i..right_bound] == snap[right_i..right_bound]
+          invariant SortedBy(leq, a[right_i..right_bound])
 
-        //target
-        invariant SortedBy(leq, a[target_start..target_i])
-      {
-        a[target_i] := a[right_i];
-        if right_i + 1 < right_bound {
-          SortedImpliesLeq(leq, a[right_i..right_bound], 0, 1);
+          // bridge: last placed element is <= both candidates
+          invariant target_i > target_start ==>
+                      right_i < right_bound ==>
+                        leq(a[target_i - 1], a[right_i])
+
+          //target
+          invariant SortedBy(leq, a[target_start..target_i])
+        {
+          assert a[target_i] == a[right_i];
+          if right_i + 1 < right_bound {
+            SortedImpliesLeq(leq, a[right_i..right_bound], 0, 1);
+          }
+          right_i := right_i + 1;
+          target_i := target_i + 1;
         }
-        right_i := right_i + 1;
-        target_i := target_i + 1;
       }
     }
 
