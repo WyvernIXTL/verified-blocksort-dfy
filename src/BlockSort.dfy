@@ -72,23 +72,15 @@ module BlockSortUnbound {
       assert (a[..i0]) + (a[i0..i1]) + (a[i1..i2]) + (a[i2..i3]) + (a[i3..]) == (a);
     }
 
-    ghost predicate {:opaque} MultisetInv<A(!new)>(
-      a: array<A>, cache: array<A>, snap: seq<A>,
-      lo: nat, mid: nat, hi: nat,
-      target_i: nat, left_i: nat, right_i: nat)
-      requires lo <= mid <= hi <= a.Length
-      requires lo <= target_i <= hi
-      requires 0 <= left_i <= mid - lo <= cache.Length
-      requires mid <= right_i <= hi
-      reads a, cache
-    {
-      multiset(a[..lo]) + multiset(a[lo..target_i]) + multiset(cache[left_i..mid-lo]) + multiset(a[right_i..hi]) + multiset(a[hi..]) == multiset(snap)
-    }
+    lemma HeadOfCache<A(!new)>(cache: array<A>, lo: nat, hi: nat)
+      requires lo < hi <= cache.Length
+      ensures [cache[lo]] + cache[lo + 1..hi] == cache[lo..hi]
+    {}
 
 
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
-      modifies cache
+      // modifies cache
 
       requires a != cache
       requires TotalOrdering(leq)
@@ -97,12 +89,14 @@ module BlockSortUnbound {
       requires SortedBy(leq, a[mid..hi])
       requires a.Length <= cache.Length
 
+      requires a[lo..mid] == cache[0..mid-lo]
+
       ensures SortedBy(leq, a[lo..hi])
       ensures multiset(a[..]) == multiset(old(a[..]))
     {
       ghost var snap := a[..];
 
-      CopySubarray(a, lo, mid, cache);
+      // CopySubarray(a, lo, mid, cache);
 
       ghost var snap_cache := cache[..];
 
@@ -116,10 +110,12 @@ module BlockSortUnbound {
       var target_i: nat := target_start;
       var target_bound: nat := hi;
 
-      // assert MultisetInv(a, cache, snap, lo, mid, hi, lo, 0, mid) by {
-      //   reveal MultisetInv;
-      //   MultiSet5Slice(a[..], lo, lo, mid, hi);
-      // }
+
+      assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        assert snap[target_i..right_i] == cache[left_i..left_bound];
+        assert multiset(snap[target_i..right_i]) == multiset(cache[left_i..left_bound]);
+        MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+      }
 
       // merging left with right
       while left_i < left_bound && right_i < right_bound
@@ -146,90 +142,40 @@ module BlockSortUnbound {
         // target
         invariant SortedBy(leq, a[target_start..target_i])
 
-        // invariant MultisetInv(a, cache, snap, lo, mid, hi, target_i, left_i, right_i)
+        // is permutation invariant
+        invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
       {
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
+
+          assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+            MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
+            assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+            HeadOfCache(cache, left_i, left_bound);
+            assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+          }
+
           left_i := left_i + 1;
         } else {
           a[target_i] := a[right_i];
 
           SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
 
+          assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i + 1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+            MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
+            assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
+            assert [a[right_i]] + a[right_i + 1..right_bound] == a[right_i..right_bound];
+            assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
+          }
+
           right_i := right_i + 1;
         }
 
         target_i := target_i + 1;
 
-        // assert MultisetInv(a, cache, snap, lo, mid, hi, target_i, left_i, right_i) by {
-        //   reveal MultisetInv;
-        //   MultiSet5Slice(a[..], lo, target_i, right_i, hi);
-        // }
-      }
-
-      // assert MultisetInv(a, cache, snap, lo, mid, hi, target_i, left_i, right_i) by {
-      assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-        ghost var snap_left_i := left_start;
-        ghost var snap_right_i := right_start;
-        ghost var snap_target_i := target_start;
-
-        ghost var snap_2 := snap;
-
-        assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
-          assert snap[snap_target_i..snap_right_i] == snap_cache[snap_left_i..left_bound];
-          assert multiset(snap[snap_target_i..snap_right_i]) == multiset(snap_cache[snap_left_i..left_bound]);
-          MultiSet5Slice(snap_2, target_start, snap_target_i, snap_right_i, target_bound);
+        assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+          MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
         }
-
-        while snap_left_i < left_bound && snap_right_i < right_bound
-          // indices invariants
-          invariant left_start <= snap_left_i <= left_bound
-          invariant right_start <= snap_right_i <= right_bound
-          invariant (snap_left_i - left_start) + (snap_right_i - right_start) == (snap_target_i - target_start)
-          invariant target_start <= snap_target_i <= target_bound
-
-          invariant right_bound <= |snap_2|
-          invariant target_bound <= |snap_2|
-
-          // multiset invariant
-          invariant multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap)
-        {
-          if leq(snap_cache[snap_left_i], snap[snap_right_i]) {
-            snap_2 := snap_2[snap_target_i := snap_cache[snap_left_i]];
-
-            assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i + 1..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
-              MultiSet5Slice(snap_2, target_start, snap_target_i + 1, snap_right_i, target_bound);
-              assert snap_2[target_start..snap_target_i] + [snap_cache[snap_left_i]] == snap_2[target_start..snap_target_i + 1];
-              assert [snap_cache[snap_left_i]] + snap_cache[snap_left_i + 1..left_bound] == snap_cache[snap_left_i..left_bound];
-              assert multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i + 1..left_bound]) == multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]);
-            }
-
-            snap_left_i := snap_left_i + 1;
-          } else {
-            snap_2 := snap_2[snap_target_i := snap_2[snap_right_i]];
-
-            assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i + 1..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
-              MultiSet5Slice(snap_2, target_start, snap_target_i + 1, snap_right_i + 1, target_bound);
-              assert snap_2[target_start..snap_target_i] + [snap_2[snap_right_i]] == snap_2[target_start..snap_target_i + 1];
-              assert [snap_2[snap_right_i]] + snap_2[snap_right_i + 1..right_bound] == snap_2[snap_right_i..right_bound];
-              assert multiset(snap_2[target_start..snap_target_i + 1]) + multiset(snap_2[snap_right_i + 1..right_bound]) == multiset(snap_2[target_start..snap_target_i]) + multiset(snap_2[snap_right_i..right_bound]);
-            }
-
-            snap_right_i := snap_right_i + 1;
-          }
-
-          snap_target_i := snap_target_i + 1;
-
-          assert multiset(snap_2[..target_start]) + multiset(snap_2[target_start..snap_target_i]) + multiset(snap_cache[snap_left_i..left_bound]) + multiset(snap_2[snap_right_i..right_bound]) + multiset(snap_2[target_bound..]) == multiset(snap) by {
-            MultiSet5Slice(snap_2, target_start, snap_target_i, snap_right_i, target_bound);
-          }
-        }
-
-        assert snap_left_i == left_i;
-        assert snap_right_i == right_i;
-        assert snap_target_i == target_i;
-        assert snap_2 == a[..];
-        assert snap_cache == cache[..];
       }
 
 
