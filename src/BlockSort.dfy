@@ -50,7 +50,7 @@ module BlockSortUnbound {
       }
     }
 
-    lemma MergeSortNext<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>, x: A, y: A)
+    lemma MergeSortNext<A(!new)>(leq: (A, A) -> bool, a: seq<A>, x: A, y: A)
       requires TotalOrdering(leq)
       requires SortedBy(leq, a)
       requires |a| > 1
@@ -63,13 +63,6 @@ module BlockSortUnbound {
       requires SortedBy(leq, a)
       requires 0 <= i <= j < |a|
       ensures leq(a[i], a[j])
-    {}
-
-    lemma SortedPrefix<A(!new)>(leq: (A, A) -> bool, p: seq<A>, a: seq<A>)
-      requires p <= a
-      requires TotalOrdering(leq)
-      requires SortedBy(leq, a)
-      ensures SortedBy(leq, p)
     {}
 
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
@@ -110,9 +103,11 @@ module BlockSortUnbound {
         invariant a[right_i..right_bound] == snap[right_i..right_bound]
         invariant SortedBy(leq, a[right_i..right_bound])
 
-        // combinded is sorted
-        // invariant SortedBy(leq, a[target_start..target_i] + cache[left_i..left_bound])
-        // invariant SortedBy(leq, a[target_start..target_i] + a[right_i..right_bound])
+        // bridge: last placed element is <= both candidates
+        invariant target_i > target_start && left_i < left_bound ==>
+                    leq(a[target_i - 1], cache[left_i])
+        invariant target_i > target_start && right_i < right_bound ==>
+                    leq(a[target_i - 1], a[right_i])
 
         // target
         invariant SortedBy(leq, a[target_start..target_i])
@@ -122,6 +117,7 @@ module BlockSortUnbound {
           left_i := left_i + 1;
         } else {
           a[target_i] := a[right_i];
+          SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
           right_i := right_i + 1;
         }
 
@@ -132,6 +128,11 @@ module BlockSortUnbound {
         invariant left_i <= left_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
+        invariant SortedBy(leq, cache[left_i..left_bound])
+        invariant target_i > target_start ==> (left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]))
+        invariant a[right_i..right_bound] == snap[right_i..right_bound]
+        invariant SortedBy(leq, a[right_i..right_bound])
+        invariant target_i > target_start ==> (right_i < right_bound ==> leq(a[target_i - 1], a[right_i]))
         invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := cache[left_i];
@@ -142,9 +143,15 @@ module BlockSortUnbound {
         invariant right_i <= right_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
+        invariant a[right_i..right_bound] == snap[right_i..right_bound]
+        invariant SortedBy(leq, a[right_i..right_bound])
+        invariant target_i > target_start ==> (right_i < right_bound ==> leq(a[target_i - 1], a[right_i]))
         invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := a[right_i];
+        if right_i + 1 < right_bound {
+          SortedImpliesLeq(leq, a[right_i..right_bound], 0, 1);
+        }
         right_i := right_i + 1;
         target_i := target_i + 1;
       }
