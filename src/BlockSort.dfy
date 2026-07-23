@@ -452,10 +452,11 @@ module BlockSortUnbound {
                     right_i < right_bound ==>
                       leq(a[target_i - 1], a[right_i])
 
-        //target
+        // is sorted
         invariant SortedBy(leq, a[target_start..target_i])
 
-        // invariant MultisetInv(a, cache, snap, lo, mid, hi, target_i, left_i, right_i)
+        // is perm
+        invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
@@ -487,8 +488,11 @@ module BlockSortUnbound {
                       right_i < right_bound ==>
                         leq(a[target_i - 1], a[right_i])
 
-          //target
+          // is sorted
           invariant SortedBy(leq, a[target_start..target_i])
+
+          // is perm
+          invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
         {
           assert a[target_i] == a[right_i];
           if right_i + 1 < right_bound {
