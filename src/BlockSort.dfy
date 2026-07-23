@@ -131,13 +131,13 @@ module BlockSortUnbound {
         invariant SortedBy(leq, a[right_i..right_bound])
 
         // bridge: last placed element is <= both candidates
-        invariant target_i > target_start ==>
-                    left_i < left_bound ==>
-                      leq(a[target_i - 1], cache[left_i])
+        // invariant target_i > target_start ==>
+        //             left_i < left_bound ==>
+        //               leq(a[target_i - 1], cache[left_i])
 
-        invariant target_i > target_start ==>
-                    right_i < right_bound ==>
-                      leq(a[target_i - 1], a[right_i])
+        // invariant target_i > target_start ==>
+        //             right_i < right_bound ==>
+        //               leq(a[target_i - 1], a[right_i])
 
         // target
         invariant SortedBy(leq, a[target_start..target_i])
@@ -145,8 +145,19 @@ module BlockSortUnbound {
         // is permutation invariant
         invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
       {
+        ghost var left;
+
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
+
+          // assert leq(a[target_i], cache[left_i]);
+          // assert leq(a[target_i], a[right_i]);
+
+          assert SortedBy(leq, a[target_start..target_i+1]) by {
+            SortedImpliesLeq(leq, cache[left_i..left_bound], 0, (if left_i + 1 < left_bound then 1 else 0));
+            assert leq(a[target_i], cache[left_i]);
+            assert leq(a[target_i], a[right_i]);
+          }
 
           assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
             MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
@@ -156,19 +167,27 @@ module BlockSortUnbound {
           }
 
           left_i := left_i + 1;
+          left := true;
         } else {
           a[target_i] := a[right_i];
 
-          SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
+          // SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
+
+          assert SortedBy(leq, a[target_start..target_i+1]) by {
+            SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i + 1 < right_bound then 1 else 0));
+            assert leq(a[target_i], cache[left_i]);
+            assert leq(a[target_i], a[right_i]);
+          }
 
           assert multiset(a[..target_start]) + multiset(a[target_start..target_i + 1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i + 1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
             MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
             assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
-            assert [a[right_i]] + a[right_i + 1..right_bound] == a[right_i..right_bound];
+            HeadOfCache(a, right_i, right_bound);
             assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
           }
 
           right_i := right_i + 1;
+          left := false;
         }
 
         target_i := target_i + 1;
@@ -176,6 +195,8 @@ module BlockSortUnbound {
         assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
           MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
         }
+
+        assert SortedBy(leq, a[target_start..target_i]);
       }
 
 
