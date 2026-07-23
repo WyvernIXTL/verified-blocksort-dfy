@@ -50,6 +50,28 @@ module BlockSortUnbound {
       }
     }
 
+    lemma MergeSortNext<A(!new, ==)>(leq: (A, A) -> bool, a: seq<A>, x: A, y: A)
+      requires TotalOrdering(leq)
+      requires SortedBy(leq, a)
+      requires |a| > 1
+      requires leq(a[|a|-1], x) || leq(a[|a|-1], y)
+      ensures SortedBy(leq, a + [x]) || SortedBy(leq, a + [y])
+    {}
+
+    lemma SortedImpliesLeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>, i: nat, j: nat)
+      requires TotalOrdering(leq)
+      requires SortedBy(leq, a)
+      requires 0 <= i <= j < |a|
+      ensures leq(a[i], a[j])
+    {}
+
+    lemma SortedPrefix<A(!new)>(leq: (A, A) -> bool, p: seq<A>, a: seq<A>)
+      requires p <= a
+      requires TotalOrdering(leq)
+      requires SortedBy(leq, a)
+      ensures SortedBy(leq, p)
+    {}
+
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
       modifies cache
@@ -62,21 +84,38 @@ module BlockSortUnbound {
       ensures SortedBy(leq, a[lo..hi])
       // ensures multiset(a[lo..hi]) == multiset(old(a[lo..hi]))
     {
+      ghost var snap := a[..];
+
       CopySubarray(a, lo, mid, cache);
 
-      var left_i: nat := 0;
+      var left_start: nat := 0;
+      var left_i: nat := left_start;
       var left_bound: nat := mid-lo;
-      var right_i: nat := mid;
+      var right_start: nat := mid;
+      var right_i: nat := right_start;
       var right_bound: nat := hi;
-      var target_i: nat := lo;
+      var target_start: nat := lo;
+      var target_i: nat := target_start;
       var target_bound: nat := hi;
 
       while left_i < left_bound && right_i < right_bound
-        invariant left_i <= left_bound && right_i <= right_bound
-        invariant left_i + (right_i - mid) == target_i - lo
-        invariant lo <= target_i < target_bound
-        invariant 0 < target_i ==> (0 < left_i && right_i < a.Length ==> leq(a[target_i-1], cache[left_i-1]) && leq(a[target_i-1], a[right_i])) || (0 < right_i ==> leq(a[target_i-1], cache[left_i]) && leq(a[target_i-1], a[right_i-1])) // ?
-        invariant SortedBy(leq, a[lo..target_i])
+        // indices invariants
+        invariant left_start <= left_i <= left_bound
+        invariant right_start <= right_i <= right_bound
+        invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+        invariant target_start <= target_i <= target_bound
+
+        // left and right invariants
+        invariant SortedBy(leq, cache[left_i..left_bound])
+        invariant a[right_i..right_bound] == snap[right_i..right_bound]
+        invariant SortedBy(leq, a[right_i..right_bound])
+
+        // combinded is sorted
+        invariant SortedBy(leq, a[target_start..target_i] + cache[left_i..left_bound])
+        invariant SortedBy(leq, a[target_start..target_i] + a[right_i..right_bound])
+
+        // target
+        invariant SortedBy(leq, a[target_start..target_i])
       {
         if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
@@ -85,6 +124,7 @@ module BlockSortUnbound {
           a[target_i] := a[right_i];
           right_i := right_i + 1;
         }
+
         target_i := target_i + 1;
       }
 
@@ -92,7 +132,7 @@ module BlockSortUnbound {
         invariant left_i <= left_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
-        invariant SortedBy(leq, a[lo..target_i])
+        invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
@@ -102,7 +142,7 @@ module BlockSortUnbound {
         invariant right_i <= right_bound
         invariant left_i + (right_i - mid) == target_i - lo
         invariant lo <= target_i <= target_bound
-        invariant SortedBy(leq, a[lo..target_i])
+        invariant SortedBy(leq, a[target_start..target_i])
       {
         a[target_i] := a[right_i];
         right_i := right_i + 1;
