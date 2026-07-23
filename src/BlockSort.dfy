@@ -89,9 +89,104 @@ module BlockSortUnbound {
       assert snap[..lo] + snap[lo..hi] + snap[hi..] == snap;
     }
 
+    lemma MainMergeLoopBranchAPreservesSortedByInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                      right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 <= right_start < right_bound <= a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start <= right_i < right_bound <= a.Length
+      requires (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires SortedBy(leq, cache[left_i..left_bound])
+      requires a[right_i..right_bound] == snap[right_i..right_bound]
+      requires SortedBy(leq, a[right_i..right_bound])
+      requires target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i])
+      requires target_i > target_start ==> right_i < right_bound ==>leq(a[target_i - 1], a[right_i])
+      requires SortedBy(leq, a[target_start..target_i])
+
+      // if branch condition and effects
+      requires leq(cache[left_i], a[right_i])
+      requires a[target_i] == cache[left_i]
+
+      // Loop Invariant Ensure
+      ensures left_start <= left_i+1 <= left_bound <= a.Length
+      ensures right_start <= right_i <= right_bound <= a.Length
+      ensures (left_i+1 - left_start) + (right_i - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i+1 <= target_bound <= a.Length
+      ensures SortedBy(leq, cache[left_i+1..left_bound])
+      ensures a[right_i..right_bound] == snap[right_i..right_bound]
+      ensures SortedBy(leq, a[right_i..right_bound])
+      ensures target_i+1 > target_start ==> left_i+1 < left_bound ==> leq(a[target_i], cache[left_i+1])
+      ensures target_i+1 > target_start ==> right_i < right_bound ==>leq(a[target_i], a[right_i])
+      ensures SortedBy(leq, a[target_start..target_i+1])
+    {
+      assert SortedBy(leq, a[target_start..target_i+1]) by {
+        SortedImpliesLeq(leq, cache[left_i..left_bound], 0, (if left_i+1 < left_bound then 1 else 0));
+        assert leq(a[target_i], cache[left_i]);
+        assert leq(a[target_i], a[right_i]);
+      }
+    }
+
+    lemma MainMergeLoopBranchBPreservesSortedByInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                      right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 <= right_start < right_bound <= a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start <= right_i < right_bound <= a.Length
+      requires (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires SortedBy(leq, cache[left_i..left_bound])
+      requires a[right_i..right_bound] == snap[right_i..right_bound]
+      requires SortedBy(leq, a[right_i..right_bound])
+      requires target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i])
+      requires target_i > target_start ==> right_i < right_bound ==>leq(a[target_i - 1], a[right_i])
+      requires SortedBy(leq, a[target_start..target_i])
+
+      // if branch condition and effects
+      requires !leq(cache[left_i], a[right_i])
+      requires a[target_i] == a[right_i]
+
+      // Loop Invariant Ensure
+      ensures left_start <= left_i <= left_bound <= a.Length
+      ensures right_start <= right_i <= right_bound <= a.Length
+      ensures (left_i - left_start) + (right_i+1 - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i <= target_bound <= a.Length
+      ensures SortedBy(leq, cache[left_i..left_bound])
+      ensures a[right_i+1..right_bound] == snap[right_i+1..right_bound]
+      ensures SortedBy(leq, a[right_i+1..right_bound])
+      ensures target_i+1 > target_start ==> left_i < left_bound ==> leq(a[target_i], cache[left_i])
+      ensures target_i+1 > target_start ==> right_i+1 < right_bound ==>leq(a[target_i], a[right_i+1])
+      ensures SortedBy(leq, a[target_start..target_i])
+    {
+      assert SortedBy(leq, a[target_start..target_i+1]) by {
+        SortedImpliesLeq(leq, a[right_i..right_bound], 0, (if right_i+1 < right_bound then 1 else 0));
+        assert leq(a[target_i], cache[left_i]);
+        assert leq(a[target_i], a[right_i]);
+      }
+    }
+
+
+
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
-      // modifies cache
 
       requires a != cache
       requires TotalOrdering(leq)
@@ -180,7 +275,14 @@ module BlockSortUnbound {
           //   assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
           // }
 
+          MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          assert SortedBy(leq, a[target_start..target_i + 1]);
+
+          target_i := target_i + 1;
           left_i := left_i + 1;
+
+
+
           left := true;
         } else {
           a[target_i] := a[right_i];
@@ -200,13 +302,19 @@ module BlockSortUnbound {
           //   assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
           // }
 
+          MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
+          assert SortedBy(leq, a[target_start..target_i+1]);
+
+          target_i := target_i + 1;
           right_i := right_i + 1;
+
+
           left := false;
         }
 
-        target_i := target_i + 1;
+        // target_i := target_i + 1;
 
-        assert Assignment: a[target_i-1] == (if left then cache[left_i-1] else a[right_i-1]);
+        // assert Assignment: a[target_i-1] == (if left then cache[left_i-1] else a[right_i-1]);
 
         // assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]) by {
         //   // assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
@@ -242,17 +350,17 @@ module BlockSortUnbound {
         //   assert multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) == multiset(snap[target_start..target_bound]);
         // }
 
-        assert SortedBy(leq, a[target_start..target_i]) by {
-          if left {
-            SortedImpliesLeq(leq, cache[left_i-1..left_bound], 0, (if left_i < left_bound then 1 else 0));
-            assert leq(a[target_i-1], cache[left_i-1]);
-            assert leq(a[target_i-1], a[right_i]);
-          } else {
-            SortedImpliesLeq(leq, a[right_i-1..right_bound], 0, (if right_i < right_bound then 1 else 0));
-            assert leq(a[target_i-1], cache[left_i]);
-            assert leq(a[target_i-1], a[right_i-1]);
-          }
-        }
+        // assert SortedBy(leq, a[target_start..target_i]) by {
+        //   if left {
+        //     SortedImpliesLeq(leq, cache[left_i-1..left_bound], 0, (if left_i < left_bound then 1 else 0));
+        //     assert leq(a[target_i-1], cache[left_i-1]);
+        //     assert leq(a[target_i-1], a[right_i]);
+        //   } else {
+        //     SortedImpliesLeq(leq, a[right_i-1..right_bound], 0, (if right_i < right_bound then 1 else 0));
+        //     assert leq(a[target_i-1], cache[left_i]);
+        //     assert leq(a[target_i-1], a[right_i-1]);
+        //   }
+        // }
       }
 
 
