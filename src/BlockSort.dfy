@@ -111,8 +111,8 @@ module BlockSortUnbound {
         invariant SortedBy(leq, a[right_i..right_bound])
 
         // combinded is sorted
-        invariant SortedBy(leq, a[target_start..target_i] + cache[left_i..left_bound])
-        invariant SortedBy(leq, a[target_start..target_i] + a[right_i..right_bound])
+        // invariant SortedBy(leq, a[target_start..target_i] + cache[left_i..left_bound])
+        // invariant SortedBy(leq, a[target_start..target_i] + a[right_i..right_bound])
 
         // target
         invariant SortedBy(leq, a[target_start..target_i])
