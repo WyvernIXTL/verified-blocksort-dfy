@@ -89,8 +89,8 @@ module BlockSortUnbound {
       assert snap[..lo] + snap[lo..hi] + snap[hi..] == snap;
     }
 
-    lemma MainMergeLoopBranchAPreservesSortedByInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
-                                                                      right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+    lemma MainMergeLoopBranchAPreservesSortedByInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                  right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       // Merge Method requirements
       requires a != cache
       requires TotalOrdering(leq)
@@ -136,8 +136,8 @@ module BlockSortUnbound {
       }
     }
 
-    lemma MainMergeLoopBranchBPreservesSortedByInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
-                                                                      right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+    lemma MainMergeLoopBranchBPreservesSortedByInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                  right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       // Merge Method requirements
       requires a != cache
       requires TotalOrdering(leq)
@@ -184,8 +184,8 @@ module BlockSortUnbound {
     }
 
 
-    lemma MainMergeLoopBranchAPreservesPermutationInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
-                                                                         right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+    lemma MainMergeLoopBranchAPreservesPermutationInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                     right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       // Merge Method requirements
       requires a != cache
       requires TotalOrdering(leq)
@@ -223,8 +223,8 @@ module BlockSortUnbound {
       assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
     }
 
-    lemma MainMergeLoopBranchBPreservesPermutationInvariant<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
-                                                                         right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+    lemma MainMergeLoopBranchBPreservesPermutationInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                                     right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       // Merge Method requirements
       requires a != cache
       requires TotalOrdering(leq)
