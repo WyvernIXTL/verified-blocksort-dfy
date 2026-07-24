@@ -176,12 +176,23 @@ module BlockSortUnbound2 {
           a[target_i] := cache[left_i];
         }
 
+        assert AEqCache: left ==> (a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1]) by {
+          if left {
+            assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1] by {
+              assert a[target_i] == cache[left_i];
+              if target_start < target_i {
+                TailOfArray(a, target_start, target_i);
+              }
+            }
+          }
+        }
+
         assert PermLeft: left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
           if left {
             assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
               MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
-              assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1]; // EXPENSIVE
+              reveal AEqCache;
               HeadOfCache(cache, left_i, left_bound);
               assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
             }
