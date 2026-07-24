@@ -69,6 +69,8 @@ module BlockSortUnbound {
       requires i0 <= i1 <= i2 <= |a|
       ensures multiset(a[..i0]) + multiset(a[i0..i1]) + multiset(a[i1..i2]) + multiset(a[i2..]) == multiset(a)
     {
+      assert a[..i0] + a[i0..i1] == a[..i1];
+      assert a[..i1] + a[i1..i2] == a[..i2];
       assert (a[..i0]) + (a[i0..i1]) + (a[i1..i2]) + (a[i2..]) == (a);
     }
 
@@ -140,6 +142,43 @@ module BlockSortUnbound {
         SortedImpliesLeq(leq, cache[left_i..left_bound], 0, (if left_i+1 < left_bound then 1 else 0));
         assert leq(a[target_i], cache[left_i]);
         assert leq(a[target_i], a[right_i]);
+      }
+    }
+
+    lemma CopyLoopLeftPreservesSortedByInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                          right_start: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start < right_bound <= a.Length
+      requires (left_i - left_start) + (right_bound - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires SortedBy(leq, cache[left_i..left_bound])
+      requires target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i])
+      requires SortedBy(leq, a[target_start..target_i])
+
+      // if branch condition and effects
+      requires a[target_i] == cache[left_i]
+
+      // Loop Invariant Ensure
+      ensures left_start <= left_i+1 <= left_bound <= a.Length
+      ensures (left_i+1 - left_start) + (right_bound - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i+1 <= target_bound <= a.Length
+      ensures SortedBy(leq, cache[left_i+1..left_bound])
+      ensures target_i+1 > target_start ==> left_i+1 < left_bound ==> leq(a[target_i], cache[left_i+1])
+      ensures SortedBy(leq, a[target_start..target_i+1])
+    {
+      assert SortedBy(leq, a[target_start..target_i+1]) by {
+        SortedImpliesLeq(leq, cache[left_i..left_bound], 0, (if left_i+1 < left_bound then 1 else 0));
+        assert leq(a[target_i], cache[left_i]);
       }
     }
 
@@ -230,6 +269,43 @@ module BlockSortUnbound {
       assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
     }
 
+    lemma CopyLeftPreservesPermutationInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
+                                                         right_start: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      // Merge Method requirements
+      requires a != cache
+      requires TotalOrdering(leq)
+      requires a.Length <= cache.Length
+
+      // bridge
+      requires |snap| == a.Length
+      requires 0 <= right_start < right_bound <= a.Length
+      requires 0 == left_start < left_bound <= a.Length
+
+      // Loop Invariants
+      requires left_start <= left_i < left_bound <= a.Length
+      requires right_start < right_bound <= a.Length
+      requires (left_i - left_start) + (right_bound - right_start) == (target_i - target_start)
+      requires target_start <= target_i < target_bound <= a.Length
+      requires multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[target_bound..]) == multiset(snap)
+
+      requires target_start <= target_i + 1 <= target_bound <= a.Length
+
+      // if branch condition and effects
+      requires a[target_i] == cache[left_i]
+
+      // Loop Invariant Ensure
+      ensures left_start <= left_i <= left_bound <= a.Length
+      ensures right_start <= right_bound <= a.Length
+      ensures (left_i+1 - left_start) + (right_bound - right_start) == (target_i+1 - target_start)
+      ensures target_start <= target_i <= target_bound <= a.Length
+      ensures multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[target_bound..]) == multiset(snap)
+    {
+      MultiSet4Slice(a[..], target_start, target_i + 1, target_bound);
+      assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+      HeadOfCache(cache, left_i, left_bound);
+      assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+    }
+
     lemma MainMergeLoopBranchBPreservesPermutationInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
                                                                      right_start: nat, right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       // Merge Method requirements
@@ -266,40 +342,6 @@ module BlockSortUnbound {
       MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
       HeadOfCache(a, right_i, right_bound);
       assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
-    }
-
-    lemma LeftCopyLoopBranchAPreservesPermutationInvariant<A(!new)>(leq: (A, A) -> bool, a: array<A>, cache: array<A>, snap: seq<A>, left_start: nat, left_i: nat, left_bound: nat,
-                                                                    target_start: nat, target_i: nat, target_bound: nat)
-      // Merge Method requirements
-      requires a != cache
-      requires TotalOrdering(leq)
-      requires a.Length <= cache.Length
-
-      // bridge
-      requires |snap| == a.Length
-      requires 0 == left_start < left_bound <= a.Length
-
-      // Loop Invariants
-      requires left_start <= left_i < left_bound <= a.Length
-      requires (left_i - left_start) == (target_i - target_start)
-      requires target_start <= target_i < target_bound <= a.Length
-      requires multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[target_bound..]) == multiset(snap)
-
-      requires target_start <= target_i + 1 <= target_bound <= a.Length
-
-      // if branch condition and effects
-      requires a[target_i] == cache[left_i]
-
-      // Loop Invariant Ensure
-      ensures left_start <= left_i <= left_bound <= a.Length
-      ensures (left_i+1 - left_start) == (target_i+1 - target_start)
-      ensures target_start <= target_i <= target_bound <= a.Length
-      ensures multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[target_bound..]) == multiset(snap)
-    {
-      MultiSet4Slice(a[..], target_start, target_i + 1, target_bound);
-      assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
-      HeadOfCache(cache, left_i, left_bound);
-      assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
     }
 
 
@@ -535,6 +577,10 @@ module BlockSortUnbound {
         }
       }
 
+      assert LeftOrRight: !(left_i < left_bound) || !(right_i < right_bound);
+      assert LeftOrRightEq: left_i == left_bound || right_i == right_bound by {
+        reveal LeftOrRight;
+      }
 
       // if right is exhausted copy left
       while left_i < left_bound
@@ -544,9 +590,9 @@ module BlockSortUnbound {
         invariant target_start <= target_i <= target_bound
 
         // left and right invariants
-        invariant SortedBy(leq, cache[left_i..left_bound])
+        invariant OpaqueSortedBy(leq, cache, left_i, left_bound)
         invariant a[right_i..right_bound] == snap[right_i..right_bound]
-        invariant SortedBy(leq, a[right_i..right_bound])
+        invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
         // bridge: last placed element is <= both candidates
         invariant target_i > target_start ==>
@@ -558,7 +604,7 @@ module BlockSortUnbound {
                       leq(a[target_i - 1], a[right_i])
 
         // is sorted
-        invariant SortedBy(leq, a[target_start..target_i])
+        invariant OpaqueSortedBy(leq, a, target_start, target_i)
 
         // is perm
         invariant InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
@@ -567,15 +613,30 @@ module BlockSortUnbound {
         left_i := left_i + 1;
         target_i := target_i + 1;
 
-        // assert MultisetInv(a, cache, snap, lo, mid, hi, target_i, left_i, right_i) by {
-        //   reveal MultisetInv;
-        //   MultiSet5Slice(a[..], lo, target_i, right_i, hi);
-        // }
+        assert OpaqueSortedBy(leq, cache, left_i, left_bound) by {
+          reveal OpaqueSortedBy;
+        }
+        assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+          reveal OpaqueSortedBy;
+        }
+        assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+          reveal OpaqueSortedBy;
+        }
+        assert target_i > target_start ==>
+            left_i < left_bound ==>
+              leq(a[target_i - 1], cache[left_i]) by {
+          reveal OpaqueSortedBy;
+        }
 
         assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
-          hide SortedBy;
+          assert right_i == right_bound by {
+            reveal LeftOrRight;
+            reveal LeftOrRightEq;
+          }
           reveal InvariantIsPerm;
-          LeftCopyLoopBranchAPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, target_start, target_i, target_bound);
+          if left_i < left_bound {
+            CopyLeftPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_bound, target_start, target_i, target_bound);
+          }
         }
       }
 
