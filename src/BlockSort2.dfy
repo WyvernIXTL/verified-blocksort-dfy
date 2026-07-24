@@ -197,9 +197,13 @@ module BlockSortUnbound2 {
         // is sorted
         invariant OpaqueSortedBy(leq, a, target_start, target_i)
 
+        // cache is snap
+        // invariant cache[left_i..left_bound] == snap[lo+left_i..mid]
+
         // is permutation
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
+
         var left := leq(cache[left_i], a[right_i]);
 
         if left {
@@ -210,7 +214,10 @@ module BlockSortUnbound2 {
           if left {
             assert left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
-              MultiSet5Slice(a[..], target_start, target_i+1, right_i, target_bound);
+              MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
+              assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+              HeadOfCache(cache, left_i, left_bound);
+              assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
             }
           }
         }
@@ -227,7 +234,10 @@ module BlockSortUnbound2 {
           if !left {
             assert !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
-              MultiSet5Slice(a[..], target_start, target_i+1, right_i+1, target_bound);
+              assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
+              MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
+              HeadOfCache(a, right_i, right_bound);
+              assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
             }
           }
         }
