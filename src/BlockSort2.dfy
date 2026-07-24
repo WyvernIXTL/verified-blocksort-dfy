@@ -145,11 +145,10 @@ module BlockSortUnbound {
       ensures IsPerm(a[..], old(a[..]))
     {
       ghost var snap := a[..];
-      ghost var snap_cache := cache[..];
 
       var left_start: nat := 0;
       var left_i: nat := left_start;
-      var left_bound: nat := mid-lo;
+      var left_bound: nat := mid - lo;
       var right_start: nat := mid;
       var right_i: nat := right_start;
       var right_bound: nat := hi;
@@ -157,13 +156,13 @@ module BlockSortUnbound {
       var target_i: nat := target_start;
       var target_bound: nat := hi;
 
+      // assert opaque preconditions of loop
       assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
         reveal InvariantIsPerm;
         assert snap[target_i..right_i] == cache[left_i..left_bound];
         assert multiset(snap[target_i..right_i]) == multiset(cache[left_i..left_bound]);
         MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
       }
-
       assert OpaqueSortedBy(leq, cache, left_i, left_bound) by {
         reveal OpaqueSortedBy;
       }
@@ -200,140 +199,30 @@ module BlockSortUnbound {
         invariant OpaqueSortedBy(leq, a, target_start, target_i)
 
         // is permutation
-        // invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
         invariant InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
-        var left := leq(cache[left_i], a[right_i]);
-
-        if left {
+        if leq(cache[left_i], a[right_i]) {
           a[target_i] := cache[left_i];
-        }
 
-        assert InvSortA1: left ==> target_i+1 > target_start ==> left_i+1 < left_bound ==> leq(a[target_i], cache[left_i+1]) by {
-          reveal OpaqueSortedBy;
-          if left {
-            assert target_i+1 > target_start ==> left_i+1 < left_bound ==> leq(a[target_i], cache[left_i+1]) by {
-              MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        assert InvSortA2: left ==> target_i+1 > target_start ==> right_i < right_bound ==> leq(a[target_i], a[right_i]) by {
-          reveal OpaqueSortedBy;
-          if left {
-            assert  target_i+1 > target_start ==> right_i < right_bound ==> leq(a[target_i], a[right_i]) by {
-              MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        assert InvSortA3: left ==> OpaqueSortedBy(leq, a, target_start, target_i+1) by {
-          reveal OpaqueSortedBy;
-          if left {
-            assert SortedBy(leq, a[target_start..target_i+1]) by {
-              MainMergeLoopBranchAPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        // assert InvPerm: left ==> multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-        assert InvPerm: left ==> InvariantIsPerm(a, cache, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
-          if left {
-            // assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by{
-            assert InvariantIsPerm(a, cache, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
-              reveal InvariantIsPerm;
-              MainMergeLoopBranchAPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        if left {
-          target_i := target_i + 1;
           left_i := left_i + 1;
-        }
-
-        if !left {
+        } else {
           a[target_i] := a[right_i];
-        }
 
-        assert InvSortB1 : !left ==> target_i+1 > target_start ==> left_i < left_bound ==> leq(a[target_i], cache[left_i]) by {
-          reveal OpaqueSortedBy;
-          if !left {
-            assert target_i+1 > target_start ==> left_i < left_bound ==> leq(a[target_i], cache[left_i]) by {
-              MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        assert InvSortB2 : !left ==> target_i+1 > target_start ==> right_i+1 < right_bound ==> leq(a[target_i], a[right_i+1]) by {
-          reveal OpaqueSortedBy;
-          if !left {
-            assert target_i+1 > target_start ==> right_i+1 < right_bound ==> leq(a[target_i], a[right_i+1]) by {
-              MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        assert InvSortB3 : !left ==> OpaqueSortedBy(leq, a, target_start, target_i+1) by {
-          reveal OpaqueSortedBy;
-          if !left {
-            assert SortedBy(leq, a[target_start..target_i+1]) by {
-              MainMergeLoopBranchBPreservesSortedByInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        assert InvPermB : !left ==> InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
-          hide SortedBy;
-          if !left {
-            // assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
-            assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
-              reveal InvariantIsPerm;
-              MainMergeLoopBranchBPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
-            }
-          }
-        }
-
-        if !left {
-          target_i := target_i + 1;
           right_i := right_i + 1;
         }
 
-        assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
-          reveal InvSortA1;
-          reveal InvSortB1;
-        }
-
-        assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
-          reveal InvSortA2;
-          reveal InvSortB2;
-        }
-
-        assert OpaqueSortedBy(leq, a, target_start, target_i) by {
-          reveal InvSortA3;
-          reveal InvSortB3;
-          reveal OpaqueSortedBy;
-        }
-
-        assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
-          hide SortedBy;
-          reveal InvPerm;
-          reveal InvPermB;
-        }
-
-        assert OpaqueSortedBy(leq, cache, left_i, left_bound) by {
-          reveal OpaqueSortedBy;
-        }
-
-        assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
-          reveal OpaqueSortedBy;
-        }
+        target_i := target_i + 1;
       }
 
       assert LeftOrRight: !(left_i < left_bound) || !(right_i < right_bound);
       assert LeftOrRightEq: left_i == left_bound || right_i == right_bound by {
         reveal LeftOrRight;
       }
+
+
+      // Stuff below is TODO
+      assume false;
+
 
       // if right is exhausted copy left
       while left_i < left_bound
