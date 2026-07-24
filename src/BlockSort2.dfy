@@ -274,10 +274,10 @@ module BlockSortUnbound2 {
       assert LeftOrRightEq: left_i == left_bound || right_i == right_bound by {
         reveal LeftOrRight;
       }
-
-
-      // Stuff below is TODO
-      assume false;
+      assert FromLeftFollowsRightEq: left_i < left_bound ==> right_i == right_bound by {
+        reveal LeftOrRight;
+        reveal LeftOrRightEq;
+      }
 
 
       // if right is exhausted copy left
@@ -308,6 +308,15 @@ module BlockSortUnbound2 {
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
         a[target_i] := cache[left_i];
+
+        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+          reveal IsPermutationInvariant;
+          MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
+          assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+          HeadOfCache(cache, left_i, left_bound);
+          assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+        }
+
         left_i := left_i + 1;
         target_i := target_i + 1;
 
@@ -325,18 +334,14 @@ module BlockSortUnbound2 {
               leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
         }
-
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
-          assert right_i == right_bound by {
-            reveal LeftOrRight;
-            reveal LeftOrRightEq;
-          }
           reveal IsPermutationInvariant;
-          if left_i < left_bound {
-            // CopyLeftPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_bound, target_start, target_i, target_bound);
-          }
         }
       }
+
+      // Stuff below is TODO
+      assume false;
+
 
       // if left is exhausted assert goal by asserting right side is allready in place
       assert SortedBy(leq, a[target_start..target_bound]) by {
