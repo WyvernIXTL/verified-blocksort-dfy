@@ -265,6 +265,15 @@ module BlockSortUnbound {
     ghost predicate {:opaque} InvariantIsPerm<A(!new)>(a: array<A>, cache: array<A>, snap: seq<A>, left_i: nat, left_bound: nat,
                                                        right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
       reads a
+      reads cache
+
+      // invariants
+      requires |snap| == a.Length
+      requires a.Length <= cache.Length
+
+      requires left_i <= left_bound <= a.Length
+      requires right_i <= right_bound <= a.Length
+      requires target_start <= target_i <= target_bound <= a.Length
     {
       multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
     }
