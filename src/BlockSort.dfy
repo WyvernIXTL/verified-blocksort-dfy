@@ -172,12 +172,12 @@ module BlockSortUnbound2 {
           a[target_i] := cache[left_i];
         }
 
-        assert left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+        assert PermLeft: left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
           if left {
             assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
               MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
-              assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+              assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1]; // EXPENSIVE
               HeadOfCache(cache, left_i, left_bound);
               assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
             }
@@ -192,7 +192,7 @@ module BlockSortUnbound2 {
           a[target_i] := a[right_i];
         }
 
-        assert !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+        assert PermRight: !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
           if !left {
             assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
@@ -217,12 +217,19 @@ module BlockSortUnbound2 {
         assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+        assert OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
           reveal OpaqueSortedBy;
         }
-        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by { // EXPENSIVE
-          reveal IsPermutationInvariant;
-          // MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+          if left {
+            assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+              reveal PermLeft;
+            }
+          } else {
+            assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+              reveal PermRight;
+            }
+          }
         }
         assert left ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
@@ -271,10 +278,10 @@ module BlockSortUnbound2 {
       {
         a[target_i] := cache[left_i];
 
-        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+        assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
-          assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
+          assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1]; // EXPENSIVE
           HeadOfCache(cache, left_i, left_bound);
           assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
@@ -288,11 +295,11 @@ module BlockSortUnbound2 {
         assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+        assert OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
           reveal OpaqueSortedBy;
         }
-        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by { // EXPENSIVE
-          reveal IsPermutationInvariant;
+        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+          reveal Perm;
         }
         assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
