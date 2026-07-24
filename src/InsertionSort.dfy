@@ -277,13 +277,33 @@ module InsertionSortBoundedU32 {
       ensures SortedBy(leq, pre + [x] + post)
     {}
 
-    method {:isolate_assertions} InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, i: uint32)
+    lemma CombineSort2<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, i: nat, j: nat)
+      requires TotalOrdering(leq)
+      requires lo <= j <= i < a.Length
+      requires SortedBy(leq, a[lo..j])
+      requires SortedBy(leq, a[j+1..i+1])
+      requires forall y | j+1 <= y < i+1 :: leq(a[j], a[y])
+      requires forall y | lo <= y < j :: leq(a[y], a[j])
+      ensures SortedBy(leq, a[lo..i+1])
+    {
+      assert a[lo..i+1] == a[lo..j] + [a[j]] +  a[j+1..i+1];
+      CombineSort(leq, a[lo..j], a[j], a[j+1..i+1]);
+    }
+
+    lemma UpdateWindow<A(!new)>(a: array<A>, snap: seq<A>, i: nat, j: nat)
+      requires 0 < j <= i < a.Length
+      requires |snap| == a.Length
+      requires a[j+1..i+1] == snap[j..i]
+      requires a[j] == snap[j-1]
+      ensures a[j..i+1] == snap[j-1..i]
+    {}
+
+    method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, i: uint32)
       modifies a
       requires TotalOrdering(leq)
-      requires a.Length <= UINT32_MAX as int
-      requires lo as int < i as int < a.Length
+      requires lo as nat < i as nat as nat < a.Length
       requires SortedBy(leq, a[lo..i])
-      ensures SortedBy(leq, a[lo..i+1])
+      ensures SortedBy(leq, a[lo..(i as nat + 1)])
       ensures multiset(a[..]) == multiset(old(a[..]))
     {
       var x := a[i];
@@ -293,25 +313,41 @@ module InsertionSortBoundedU32 {
       SortedPrefix(leq, a[lo..j], snap[lo..i]);
 
       while j > lo && !leq(a[j-1], x)
-        invariant lo as int <= j as int <= i as int < a.Length
-        invariant a[..j+1] == snap[..j+1]
-        invariant a[i+1..] == snap[i+1..]
-        invariant a[j+1..i+1] == snap[j..i]
+        invariant lo as nat <= j as nat <= i as nat < a.Length
+        invariant a[..(j as nat + 1)] == snap[..(j as nat + 1)]
+        invariant a[(i as nat + 1)..] == snap[(i as nat + 1)..]
+        invariant a[(j as nat + 1)..(i as nat + 1)] == snap[j..i]
+        invariant a[lo..j] <= snap[lo..i]
         invariant SortedBy(leq, a[lo..j])
-        invariant SortedBy(leq, a[j+1..i+1])
-        invariant forall y | j+1 <= y < i+1 :: leq(x, a[y])
+        invariant SortedBy(leq, a[(j as nat + 1)..(i as nat + 1)])
+        invariant forall y | (j as nat + 1) <= y < (i as nat + 1) :: leq(x, a[y])
         invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(snap)
       {
         a[j] := a[j-1];
+
+        assert WindowCorrect: a[j..(i as nat + 1)] == snap[j-1..i] by {
+          UpdateWindow(a, snap, i as nat, j as nat);
+        }
+
         j := j - 1;
 
-        SortedPrefix(leq, a[lo..j], snap[lo..i]);
+        assert SortedBy(leq, a[lo..j]) by {
+          SortedPrefix(leq, a[lo..j], snap[lo..i]);
+        }
+        assert a[j+1..(i as nat + 1)] == snap[j..i] by {
+          hide SortedBy;
+          reveal WindowCorrect;
+        }
       }
 
       a[j] := x;
 
-      CombineSort(leq, a[lo..j], a[j], a[j+1..i+1]);
-      assert a[lo..i+1] == a[lo..j] + [a[j]] +  a[j+1..i+1];
+      assert SortedBy(leq, a[lo..(i as nat + 1)]) by {
+        assert {:split_here} true;
+        assert forall y: nat | lo as nat <= y < j as nat :: leq(a[y], a[j as nat]);
+        CombineSort2(leq, a, lo as nat, i as nat, j as nat);
+        assert {:split_here} true;
+      }
     }
   }
 
