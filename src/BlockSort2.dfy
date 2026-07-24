@@ -329,9 +329,7 @@ module BlockSortUnbound2 {
         assert OpaqueSortedBy(leq, a, target_start, target_i) by {
           reveal OpaqueSortedBy;
         }
-        assert target_i > target_start ==>
-            left_i < left_bound ==>
-              leq(a[target_i - 1], cache[left_i]) by {
+        assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
@@ -339,12 +337,9 @@ module BlockSortUnbound2 {
         }
       }
 
-      // Stuff below is TODO
-      assume false;
-
 
       // if left is exhausted assert goal by asserting right side is allready in place
-      assert SortedBy(leq, a[target_start..target_bound]) by {
+      assert OpaqueSortedBy(leq, a, target_start, target_bound) by {
         var right_i := right_i;
         var target_i := target_i;
 
@@ -356,7 +351,7 @@ module BlockSortUnbound2 {
 
           // left and right invariants
           invariant a[right_i..right_bound] == snap[right_i..right_bound]
-          invariant SortedBy(leq, a[right_i..right_bound])
+          invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
           // bridge: last placed element is <= both candidates
           invariant target_i > target_start ==>
@@ -364,16 +359,27 @@ module BlockSortUnbound2 {
                         leq(a[target_i - 1], a[right_i])
 
           // is sorted
-          invariant SortedBy(leq, a[target_start..target_i])
+          invariant OpaqueSortedBy(leq, a, target_start, target_i)
         {
           assert a[target_i] == a[right_i];
-          if right_i + 1 < right_bound {
-            SortedImpliesLeq(leq, a[right_i..right_bound], 0, 1);
-          }
+
           right_i := right_i + 1;
           target_i := target_i + 1;
+
+          assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+            reveal OpaqueSortedBy;
+          }
+          assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+            reveal OpaqueSortedBy;
+          }
+          assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
+            reveal OpaqueSortedBy;
+          }
         }
       }
+
+      // Stuff below is TODO
+      assume false;
 
       // assert multiset(a[..]) == multiset(snap) by {
       //   reveal MultisetInv;
