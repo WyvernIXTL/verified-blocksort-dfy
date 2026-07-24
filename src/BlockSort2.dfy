@@ -431,14 +431,6 @@ module BlockSortUnbound2 {
         MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
         reveal IsPermutation;
       }
-
-      // Stuff below is TODO
-      assume false;
-
-      // assert multiset(a[..]) == multiset(snap) by {
-      //   reveal MultisetInv;
-      //   MultiSetTrippleSlice(a[..], lo, hi);
-      // }
     }
 
 
