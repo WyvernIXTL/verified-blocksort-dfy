@@ -378,6 +378,60 @@ module BlockSortUnbound2 {
         }
       }
 
+      assert IsPermutation(a[..], snap) by {
+        var right_i := right_i;
+        var target_i := target_i;
+
+        while right_i < right_bound
+          // indices invariants
+          invariant right_start <= right_i <= right_bound
+          invariant (left_i - left_start) + (right_i - right_start) == (target_i - target_start)
+          invariant target_start <= target_i <= target_bound
+
+          // left and right invariants
+          invariant a[right_i..right_bound] == snap[right_i..right_bound]
+          // invariant OpaqueSortedBy(leq, a, right_i, right_bound)
+
+          // // bridge: last placed element is <= both candidates
+          // invariant target_i > target_start ==>
+          //             right_i < right_bound ==>
+          //               leq(a[target_i - 1], a[right_i])
+
+          // // is sorted
+          // invariant OpaqueSortedBy(leq, a, target_start, target_i)
+
+          // is perm
+          invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
+        {
+          assert a[target_i] == a[right_i];
+
+          assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+            reveal IsPermutationInvariant;
+            assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
+            MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
+            HeadOfCache(a, right_i, right_bound);
+            assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
+          }
+
+          right_i := right_i + 1;
+          target_i := target_i + 1;
+
+          // assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+          //   reveal OpaqueSortedBy;
+          // }
+          // assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+          //   reveal OpaqueSortedBy;
+          // }
+          // assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
+          //   reveal OpaqueSortedBy;
+          // }
+        }
+
+        reveal IsPermutationInvariant;
+        MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+        reveal IsPermutation;
+      }
+
       // Stuff below is TODO
       assume false;
 
