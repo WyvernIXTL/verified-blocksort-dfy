@@ -262,6 +262,15 @@ module BlockSortUnbound {
     }
 
 
+    ghost predicate {:opaque} InvariantIsPerm<A(!new)>(a: array<A>, cache: array<A>, snap: seq<A>, left_i: nat, left_bound: nat,
+                                                       right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
+      reads a
+    {
+      multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+    }
+
+
+
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
 
@@ -290,8 +299,9 @@ module BlockSortUnbound {
       var target_i: nat := target_start;
       var target_bound: nat := hi;
 
-
-      assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+      // assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+      assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+        reveal InvariantIsPerm;
         assert snap[target_i..right_i] == cache[left_i..left_bound];
         assert multiset(snap[target_i..right_i]) == multiset(cache[left_i..left_bound]);
         MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
@@ -323,7 +333,8 @@ module BlockSortUnbound {
         invariant SortedBy(leq, a[target_start..target_i])
 
         // is permutation
-        invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+        // invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+        invariant InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
         var left := leq(cache[left_i], a[right_i]);
 
@@ -355,9 +366,13 @@ module BlockSortUnbound {
           }
         }
 
-        assert InvPerm: left ==> multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        // assert InvPerm: left ==> multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        assert InvPerm: left ==> InvariantIsPerm(a, cache, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+          hide SortedBy;
           if left {
-            assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by{
+            // assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i+1..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by{
+            assert InvariantIsPerm(a, cache, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+              reveal InvariantIsPerm;
               MainMergeLoopBranchAPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
             }
           }
@@ -396,9 +411,13 @@ module BlockSortUnbound {
           }
         }
 
-        assert InvPermB : !left ==> multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        // assert InvPermB : !left ==> multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        assert InvPermB : !left ==> InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+          hide SortedBy;
           if !left {
-            assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+            // assert multiset(a[..target_start]) + multiset(a[target_start..target_i+1]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i+1..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+            assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+              reveal InvariantIsPerm;
               MainMergeLoopBranchBPreservesPermutationInvariant(leq, a, cache, snap, left_start, left_i, left_bound, right_start, right_i, right_bound, target_start, target_i, target_bound);
             }
           }
@@ -424,7 +443,9 @@ module BlockSortUnbound {
           reveal InvSortB3;
         }
 
-        assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        // assert multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap) by {
+        assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+          hide SortedBy;
           reveal InvPerm;
           reveal InvPermB;
         }
@@ -456,7 +477,7 @@ module BlockSortUnbound {
         invariant SortedBy(leq, a[target_start..target_i])
 
         // is perm
-        invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
+        invariant InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
         a[target_i] := cache[left_i];
         left_i := left_i + 1;
@@ -466,6 +487,11 @@ module BlockSortUnbound {
         //   reveal MultisetInv;
         //   MultiSet5Slice(a[..], lo, target_i, right_i, hi);
         // }
+
+        assert InvariantIsPerm(a, cache, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+          hide SortedBy;
+          reveal InvariantIsPerm;
+        }
       }
 
       // if left is exhausted assert goal by asserting right side is allready in place
@@ -490,9 +516,6 @@ module BlockSortUnbound {
 
           // is sorted
           invariant SortedBy(leq, a[target_start..target_i])
-
-          // is perm
-          invariant multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
         {
           assert a[target_i] == a[right_i];
           if right_i + 1 < right_bound {
