@@ -10,9 +10,7 @@
   Verified Insertion Sort in Dafny
 
   This file contains a verified implementation of insertion sort in the programming language Dafny.
-  The algorithm itself strictly follows the pseudocode available at <https://en.wikipedia.org/wiki/Insertion_sort>.
-  While the algorithm itself is simple, the verification was quite a torture. The verification of 
-  `InsertionSortInnerLoop` is somewhat variable.
+  If you are interested in insertion sort, have a look at <https://en.wikipedia.org/wiki/Insertion_sort>.
 
   Dafny v4.11.0 was used for writing this code. To verify this code execute dafny with:
 
