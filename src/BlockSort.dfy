@@ -38,28 +38,6 @@ module BlockSortUnbound2 {
 
     import opened InsertionSortAdaptive
 
-    lemma SortedImpliesLeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>, i: nat, j: nat)
-      requires TotalOrdering(leq)
-      requires SortedBy(leq, a)
-      requires 0 <= i <= j < |a|
-      ensures leq(a[i], a[j])
-    {}
-
-    lemma MultiSetTrippleSlice<A(!new)>(a: seq<A>, lo: nat, hi: nat)
-      requires lo <= hi <= |a|
-      ensures multiset(a[..lo]) + multiset(a[lo..hi]) + multiset(a[hi..]) == multiset(a[..])
-    {
-      assert a[..lo] + a[lo..hi] + a[hi..] == a;
-    }
-
-    lemma MultiSet4Slice<A(!new)>(a: seq<A>, i0: nat, i1: nat, i2: nat)
-      requires i0 <= i1 <= i2 <= |a|
-      ensures multiset(a[..i0]) + multiset(a[i0..i1]) + multiset(a[i1..i2]) + multiset(a[i2..]) == multiset(a)
-    {
-      assert a[..i0] + a[i0..i1] == a[..i1];
-      assert a[..i1] + a[i1..i2] == a[..i2];
-      assert (a[..i0]) + (a[i0..i1]) + (a[i1..i2]) + (a[i2..]) == (a);
-    }
 
     lemma MultiSet5Slice<A(!new)>(a: seq<A>, i0: nat, i1: nat, i2: nat, i3: nat)
       requires i0 <= i1 <= i2 <= i3 <= |a|
@@ -72,20 +50,6 @@ module BlockSortUnbound2 {
       requires lo < hi <= cache.Length
       ensures [cache[lo]] + cache[lo + 1..hi] == cache[lo..hi]
     {}
-
-    lemma TailOfTarget<A(!new)>(a: array<A>, lo: nat, hi: nat)
-      requires lo < hi <= a.Length
-      ensures a[lo..hi-1] + [a[hi-1]] == a[lo..hi]
-    {}
-
-    lemma WindowEqualsSeqWithoutEdges<A(!new)>(snap: seq<A>, lo: nat, hi: nat)
-      requires lo < hi <= |snap|
-      ensures multiset(snap[lo..hi]) == multiset(snap) - multiset(snap[..lo]) - multiset(snap[hi..])
-    {
-      assert snap[..lo] + snap[lo..hi] + snap[hi..] == snap;
-    }
-
-
 
 
     ghost predicate {:opaque} OpaqueSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
@@ -100,6 +64,7 @@ module BlockSortUnbound2 {
     {
       multiset(a) == multiset(old_a)
     }
+
 
     ghost predicate {:opaque} IsPermutationInvariant<A(!new)>(a: array<A>, cache: array<A>, cache_min_size: nat, snap: seq<A>, left_i: nat, left_bound: nat,
                                                               right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
@@ -196,9 +161,6 @@ module BlockSortUnbound2 {
 
         // is sorted
         invariant OpaqueSortedBy(leq, a, target_start, target_i)
-
-        // cache is snap
-        // invariant cache[left_i..left_bound] == snap[lo+left_i..mid]
 
         // is permutation
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
@@ -390,15 +352,6 @@ module BlockSortUnbound2 {
 
           // left and right invariants
           invariant a[right_i..right_bound] == snap[right_i..right_bound]
-          // invariant OpaqueSortedBy(leq, a, right_i, right_bound)
-
-          // // bridge: last placed element is <= both candidates
-          // invariant target_i > target_start ==>
-          //             right_i < right_bound ==>
-          //               leq(a[target_i - 1], a[right_i])
-
-          // // is sorted
-          // invariant OpaqueSortedBy(leq, a, target_start, target_i)
 
           // is perm
           invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
@@ -415,16 +368,6 @@ module BlockSortUnbound2 {
 
           right_i := right_i + 1;
           target_i := target_i + 1;
-
-          // assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
-          //   reveal OpaqueSortedBy;
-          // }
-          // assert OpaqueSortedBy(leq, a, target_start, target_i) by {
-          //   reveal OpaqueSortedBy;
-          // }
-          // assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
-          //   reveal OpaqueSortedBy;
-          // }
         }
 
         reveal IsPermutationInvariant;
