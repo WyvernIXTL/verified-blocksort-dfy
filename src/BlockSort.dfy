@@ -220,9 +220,9 @@ module BlockSortUnbound2 {
         assert OpaqueSortedBy(leq, a, target_start, target_i) by {
           reveal OpaqueSortedBy;
         }
-        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
+        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
-          MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+          // MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
         }
         assert left ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
@@ -291,11 +291,11 @@ module BlockSortUnbound2 {
         assert OpaqueSortedBy(leq, a, target_start, target_i) by {
           reveal OpaqueSortedBy;
         }
+        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by { // EXPENSIVE
+          reveal IsPermutationInvariant;
+        }
         assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
-        }
-        assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
-          reveal IsPermutationInvariant;
         }
       }
 
