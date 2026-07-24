@@ -51,6 +51,10 @@ module BlockSortUnbound2 {
       ensures [cache[lo]] + cache[lo + 1..hi] == cache[lo..hi]
     {}
 
+    lemma TailOfArray<A(!new)>(a: array<A>, lo: nat, hi: nat)
+      requires lo < hi < a.Length
+      ensures a[lo..hi] + [a[hi]] == a[lo..hi+1]
+    {}
 
     ghost predicate {:opaque} OpaqueSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
       reads a
@@ -277,11 +281,15 @@ module BlockSortUnbound2 {
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
         a[target_i] := cache[left_i];
+        assert AUpdatedTail: a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1] by {
+          assert a[target_i] == cache[left_i];
+          TailOfArray(a, target_start, target_i);
+        }
 
         assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
-          assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1]; // EXPENSIVE
+          reveal AUpdatedTail;
           HeadOfCache(cache, left_i, left_bound);
           assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
