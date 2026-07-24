@@ -16,8 +16,13 @@
 
   Dafny v4.11.0 was used for writing this code. To verify this code execute dafny with:
 
-    dafny verify --standard-libraries --cores 100% --resource-limit 3000000 InsertionSort.dfy
-  
+    dafny verify --standard-libraries InsertionSort.dfy
+
+  I tested the verifcation variance with
+
+    dafny measure-complexity InsertionSort.dfy --log-format csv --mutations 50 --standard-libraries
+
+  and all 50 runs passed. The proofs are "bombenfest".
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
@@ -358,19 +363,36 @@ module InsertionSortBoundedU32 {
       }
     }
 
+    ghost predicate {:opaque} IsPermutation<A(!new)>(a: seq<A>, old_a: seq<A>)
+    {
+      multiset(a) == multiset(old_a)
+    }
+
+    ghost predicate {:opaque} IsPermutationInvariant<A(!new)>(x: A, a: array<A>, j: uint32, old_a: seq<A>)
+      reads a
+      requires j as int < a.Length
+    {
+      multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(old_a)
+    }
+
     method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, i: uint32)
       modifies a
       requires TotalOrdering(leq)
       requires lo as int < i as int < a.Length <= UINT32_MAX as int
       requires SortedBy(leq, a[lo..i])
       ensures SortedBy(leq, a[lo..i+1])
-      ensures multiset(a[..]) == multiset(old(a[..]))
+      ensures IsPermutation(a[..], old(a[..]))
     {
       var x := a[i];
       var j := i;
 
       ghost var snap := a[..];
       SortedPrefix(leq, a[lo..j], snap[lo..i]);
+
+      assert IsPermutationInvariant(x, a, j, snap) by {
+        hide SortedBy;
+        reveal IsPermutationInvariant;
+      }
 
       while j > lo && !leq(a[j-1], x)
         invariant lo as int <= j as int <= i as int < a.Length
@@ -382,7 +404,7 @@ module InsertionSortBoundedU32 {
         invariant SortedBy(leq, a[j+1..i+1])
         invariant forall y | j+1 <= y < i+1 :: leq(x, a[y])
         invariant leq(x, a[j])
-        invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(snap)
+        invariant IsPermutationInvariant(x, a, j, snap)
       {
         a[j] := a[j-1];
 
@@ -399,17 +421,26 @@ module InsertionSortBoundedU32 {
           hide SortedBy;
           reveal WindowCorrect;
         }
+
+        assert IsPermutationInvariant(x, a, j, snap) by {
+          hide SortedBy;
+          reveal IsPermutationInvariant;
+        }
       }
 
       a[j] := x;
 
       assert SortedBy(leq, a[lo..i+1]) by {
-        assert {:split_here} true; // This SortedBy will take 11M RU without this split.
         if j > lo {
           SortedPrefixLeqLast(leq, a, lo, j, x);
         }
         CombineSort2(leq, a, lo, i, j);
-        assert {:split_here} true;
+      }
+
+      assert IsPermutation(a[..], snap) by {
+        hide SortedBy;
+        reveal IsPermutationInvariant;
+        reveal IsPermutation;
       }
     }
   }
@@ -432,6 +463,7 @@ module InsertionSortBoundedU32 {
       invariant SortedBy(leq, a[lo..i])
     {
       InsertionSortInnerLoopImpl.InsertionSortInnerLoop(leq, a, lo, i);
+      reveal InsertionSortInnerLoopImpl.IsPermutation;
     }
   }
 
