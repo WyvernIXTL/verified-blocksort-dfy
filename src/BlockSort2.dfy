@@ -212,7 +212,7 @@ module BlockSortUnbound2 {
 
         assert left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
           if left {
-            assert left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+            assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
               MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
               assert a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
@@ -232,7 +232,7 @@ module BlockSortUnbound2 {
 
         assert !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
           if !left {
-            assert !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+            assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
               assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
               MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
@@ -261,6 +261,12 @@ module BlockSortUnbound2 {
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
+        }
+        assert left ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
+          reveal OpaqueSortedBy;
+        }
+        assert !left ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
+          reveal OpaqueSortedBy;
         }
       }
 
