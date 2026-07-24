@@ -6,3 +6,9 @@ tasks:
       - v
     cmds:
       - dafny verify dfyconfig.toml {{.CLI_ARGS}}
+
+
+  verify-logged-insertion-sort:
+    cmds:
+      - dafny verify --standard-libraries --cores 100% --log-format text src/InsertionSort.dfy > logs/InsertionSort.txt
+
