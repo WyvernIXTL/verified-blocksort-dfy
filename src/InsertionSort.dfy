@@ -137,6 +137,21 @@ module InsertionSortUnbounded {
       ensures a[j..i+1] == snap[j-1..i]
     {}
 
+    lemma SortedPrefixLeqLast<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, j: nat, x: A)
+      requires TotalOrdering(leq)
+      requires lo < j <= a.Length
+      requires SortedBy(leq, a[lo..j])
+      requires leq(a[j-1], x)
+      ensures forall y | lo <= y < j :: leq(a[y], x)
+    {
+      forall y | lo <= y < j
+        ensures leq(a[y], x)
+      {
+        assert a[lo..j][y - lo] == a[y];
+        assert a[lo..j][j - 1 - lo] == a[j - 1];
+      }
+    }
+
     method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, i: nat)
       modifies a
       requires TotalOrdering(leq)
@@ -183,10 +198,10 @@ module InsertionSortUnbounded {
       a[j] := x;
 
       assert SortedBy(leq, a[lo..i+1]) by {
-        assert {:split_here} true; // highly variable code
-        assert forall y | lo <= y < j :: leq(a[y], a[j]);
+        if j > lo {
+          SortedPrefixLeqLast(leq, a, lo, j, x);
+        }
         CombineSort2(leq, a, lo, i, j);
-        assert {:split_here} true;
       }
     }
   }
@@ -299,6 +314,21 @@ module InsertionSortBoundedU32 {
       ensures a[j..i+1] == snap[j-1..i]
     {}
 
+    lemma SortedPrefixLeqLast<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, j: uint32, x: A)
+      requires TotalOrdering(leq)
+      requires lo as int < j as int <= a.Length <= UINT32_MAX as int
+      requires SortedBy(leq, a[lo..j])
+      requires leq(a[j-1], x)
+      ensures forall y | lo <= y < j :: leq(a[y], x)
+    {
+      forall y | lo <= y < j
+        ensures leq(a[y], x)
+      {
+        assert a[lo..j][y - lo] == a[y];
+        assert a[lo..j][j - 1 - lo] == a[j - 1];
+      }
+    }
+
     method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: uint32, i: uint32)
       modifies a
       requires TotalOrdering(leq)
@@ -345,8 +375,10 @@ module InsertionSortBoundedU32 {
       a[j] := x;
 
       assert SortedBy(leq, a[lo..i+1]) by {
-        assert {:split_here} true; // highly variable code fails because of no reason
-        assert forall y | lo <= y < j :: leq(a[y], a[j]);
+        assert {:split_here} true; // This SortedBy will take 11M RU without this split.
+        if j > lo {
+          SortedPrefixLeqLast(leq, a, lo, j, x);
+        }
         CombineSort2(leq, a, lo, i, j);
         assert {:split_here} true;
       }

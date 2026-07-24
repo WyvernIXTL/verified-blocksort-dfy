@@ -12,6 +12,6 @@ tasks:
     cmds:
       - dafny verify --standard-libraries --cores 100% --log-format text src/InsertionSort.dfy > logs/InsertionSort.txt
 
-  measure-complexity-insertion-sort:
-    cmds:
-      - dafny measure-complexity src/InsertionSort.dfy --log-format csv --mutations 10 --standard-libraries
+  # measure-complexity-insertion-sort:
+  #   cmds:
+  #     - dafny measure-complexity src/InsertionSort.dfy --log-format csv --mutations 10 --standard-libraries
