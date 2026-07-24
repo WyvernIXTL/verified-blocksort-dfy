@@ -340,8 +340,8 @@ module BlockSortUnbound {
       requires a != cache
       requires TotalOrdering(leq)
       requires lo < mid < hi <= a.Length
-      requires SortedBy(leq, a[lo..mid])
-      requires SortedBy(leq, a[mid..hi])
+      requires OpaqueSortedBy(leq, a, lo, mid)
+      requires OpaqueSortedBy(leq, a, mid, hi)
       requires a.Length <= cache.Length
 
       requires a[lo..mid] == cache[0..mid-lo]
