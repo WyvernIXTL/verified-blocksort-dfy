@@ -152,19 +152,36 @@ module InsertionSortUnbounded {
       }
     }
 
+    ghost predicate {:opaque} IsPermutation<A(!new)>(a: seq<A>, old_a: seq<A>)
+    {
+      multiset(a) == multiset(old_a)
+    }
+
+    ghost predicate {:opaque} IsPermutationInvariant<A(!new)>(x: A, a: array<A>, j: nat, old_a: seq<A>)
+      reads a
+      requires j < a.Length
+    {
+      multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(old_a)
+    }
+
     method InsertionSortInnerLoop<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, i: nat)
       modifies a
       requires TotalOrdering(leq)
       requires lo < i < a.Length
       requires SortedBy(leq, a[lo..i])
       ensures SortedBy(leq, a[lo..i+1])
-      ensures multiset(a[..]) == multiset(old(a[..]))
+      ensures IsPermutation(a[..], old(a[..]))
     {
       var x := a[i];
       var j := i;
 
       ghost var snap := a[..];
       SortedPrefix(leq, a[lo..j], snap[lo..i]);
+
+      assert IsPermutationInvariant(x, a, j, snap) by {
+        hide SortedBy;
+        reveal IsPermutationInvariant;
+      }
 
       while j > lo && !leq(a[j-1], x)
         invariant lo <= j <= i < a.Length
@@ -176,7 +193,7 @@ module InsertionSortUnbounded {
         invariant SortedBy(leq, a[j+1..i+1])
         invariant forall y | j+1 <= y < i+1 :: leq(x, a[y])
         invariant leq(x, a[j])
-        invariant multiset{x} + (multiset(a[..]) - multiset{a[j]}) == multiset(snap)
+        invariant IsPermutationInvariant(x, a, j, snap)
       {
         a[j] := a[j-1];
 
@@ -193,6 +210,11 @@ module InsertionSortUnbounded {
           hide SortedBy;
           reveal WindowCorrect;
         }
+
+        assert IsPermutationInvariant(x, a, j, snap) by {
+          hide SortedBy;
+          reveal IsPermutationInvariant;
+        }
       }
 
       a[j] := x;
@@ -202,6 +224,12 @@ module InsertionSortUnbounded {
           SortedPrefixLeqLast(leq, a, lo, j, x);
         }
         CombineSort2(leq, a, lo, i, j);
+      }
+
+      assert IsPermutation(a[..], snap) by {
+        hide SortedBy;
+        reveal IsPermutationInvariant;
+        reveal IsPermutation;
       }
     }
   }
@@ -223,6 +251,7 @@ module InsertionSortUnbounded {
       invariant SortedBy(leq, a[lo..i])
     {
       InsertionSortInnerLoopImpl.InsertionSortInnerLoop(leq, a, lo, i);
+      reveal InsertionSortInnerLoopImpl.IsPermutation;
     }
   }
 
