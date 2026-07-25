@@ -177,7 +177,7 @@ module BlockSortUnbound2 {
         }
 
         assert AUpdatedTailLeft: left ==> a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
-        assert PermLeft: left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+        assert PermLeft: left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
           reveal AUpdatedTailLeft;
