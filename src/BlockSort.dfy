@@ -354,6 +354,11 @@ module BlockSortUnbound2 {
         // is perm
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
+        ghost var snap_left := cache[left_i..left_bound];
+        assert LeftSortedBackup: OpaqueSortedBySeq(leq, snap_left) by {
+          OpaqueSortedBySeqFromOpaqueSortedBy(leq, cache, left_i, left_bound);
+        }
+
         a[target_i] := cache[left_i];
 
         assert AUpdatedTail: a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1] by {
@@ -383,8 +388,11 @@ module BlockSortUnbound2 {
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
           reveal Perm;
         }
-        assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
-          reveal OpaqueSortedBy;
+        assert left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
+          if left_i < left_bound {
+            reveal LeftSortedBackup;
+            HeadLeqNextIfOpaqueSortedBySeq(leq, snap_left);
+          }
         }
         reveal SortedLeft;
         reveal SortedRight;
@@ -415,6 +423,11 @@ module BlockSortUnbound2 {
           // is sorted
           invariant OpaqueSortedBy(leq, a, target_start, target_i)
         {
+          ghost var snap_right := a[right_i..right_bound];
+          assert RightSortedBackup: OpaqueSortedBySeq(leq, snap_right) by {
+            OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, right_i, right_bound);
+          }
+
           assert a[target_i] == a[right_i];
 
           right_i := right_i + 1;
@@ -426,8 +439,11 @@ module BlockSortUnbound2 {
           assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
             reveal OpaqueSortedBy;
           }
-          assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
-            reveal OpaqueSortedBy;
+          assert right_i < right_bound ==> leq(a[target_i-1], a[right_i]) by {
+            if right_i < right_bound {
+              reveal RightSortedBackup;
+              HeadLeqNextIfOpaqueSortedBySeq(leq, snap_right);
+            }
           }
           reveal SortedRight;
           reveal SortedTarget;
