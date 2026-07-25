@@ -4,4 +4,4 @@ includes = ["src/**/*.dfy"]
 enforce-determinism = true
 standard-libraries = true
 cores = "100%"
-resource-limit = 15000000
+resource-limit = 20000000

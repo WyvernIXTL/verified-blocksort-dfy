@@ -70,11 +70,47 @@ module BlockSortUnbound2 {
       SortedBy(leq, a[lo..hi])
     }
 
+    ghost predicate {:opaque} OpaqueSortedBySeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>)
+      requires TotalOrdering(leq)
+    {
+      SortedBy(leq, a)
+    }
+
+    lemma OpaqueSortedBySeqFromOpaqueSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires lo <= hi <= a.Length
+      requires OpaqueSortedBy(leq, a, lo, hi)
+      ensures OpaqueSortedBySeq(leq, a[lo..hi])
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+    }
+
+    lemma OpaqueSortedByIfOpaqueSortedBySeqAndIrrellevantChange<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires OpaqueSortedBySeq(leq, backup)
+      requires lo < hi <= a.Length
+      requires backup == a[lo..hi]
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+    }
+
+    lemma HeadLeqNextIfOpaqueSortedBySeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>)
+      requires TotalOrdering(leq)
+      requires OpaqueSortedBySeq(leq, a)
+      requires 2 <= |a|
+      ensures leq(a[0], a[1])
+    {
+      reveal OpaqueSortedBySeq;
+    }
+
+
     ghost predicate {:opaque} IsPermutation<A(!new)>(a: seq<A>, old_a: seq<A>)
     {
       multiset(a) == multiset(old_a)
     }
-
 
     ghost predicate {:opaque} IsPermutationInvariant<A(!new)>(a: array<A>, cache: array<A>, cache_min_size: nat, snap: seq<A>, left_i: nat, left_bound: nat,
                                                               right_i: nat, right_bound: nat, target_start: nat, target_i: nat, target_bound: nat)
@@ -92,6 +128,13 @@ module BlockSortUnbound2 {
       multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
     }
 
+    lemma LeqHeadFromSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires hi < a.Length
+      requires lo+1 < hi
+      requires SortedBy(leq, a[lo..hi])
+      ensures leq(a[lo], a[lo+1])
+    {}
 
     // merge two blocks together
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
@@ -175,6 +218,14 @@ module BlockSortUnbound2 {
         // is permutation
         invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
       {
+        ghost var snap_left := cache[left_i..left_bound];
+        assert LeftSortedBackup: OpaqueSortedBySeq(leq, snap_left) by {
+          OpaqueSortedBySeqFromOpaqueSortedBy(leq, cache, left_i, left_bound);
+        }
+        ghost var snap_right := a[right_i..right_bound];
+        assert RightSortedBackup: OpaqueSortedBySeq(leq, snap_right) by {
+          OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, right_i, right_bound);
+        }
 
         var left := leq(cache[left_i], a[right_i]);
 
@@ -245,10 +296,20 @@ module BlockSortUnbound2 {
           }
         }
         assert left ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
-          reveal OpaqueSortedBy;
+          if left {
+            if left_i < left_bound {
+              reveal LeftSortedBackup;
+              HeadLeqNextIfOpaqueSortedBySeq(leq, snap_left);
+            }
+          }
         }
-        assert !left ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by { // OFTEN FAILS
-          reveal OpaqueSortedBy;
+        assert !left ==> right_i < right_bound ==> leq(a[target_i-1], a[right_i]) by {
+          if !left {
+            if right_i < right_bound {
+              reveal RightSortedBackup;
+              HeadLeqNextIfOpaqueSortedBySeq(leq, snap_right);
+            }
+          }
         }
         reveal SortedLeft;
         reveal SortedRight;
