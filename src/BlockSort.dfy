@@ -209,13 +209,13 @@ module BlockSortUnbound2 {
         target_i := target_i + 1;
 
 
-        assert OpaqueSortedBy(leq, cache, left_i, left_bound) by {
+        assert SortedLeft: OpaqueSortedBy(leq, cache, left_i, left_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+        assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
+        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
           reveal OpaqueSortedBy;
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
@@ -231,6 +231,9 @@ module BlockSortUnbound2 {
         assert !left ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
           reveal OpaqueSortedBy;
         }
+        reveal SortedLeft;
+        reveal SortedRight;
+        reveal SortedTarget;
       }
 
       assert LeftOrRight: !(left_i < left_bound) || !(right_i < right_bound);
@@ -287,13 +290,13 @@ module BlockSortUnbound2 {
         left_i := left_i + 1;
         target_i := target_i + 1;
 
-        assert OpaqueSortedBy(leq, cache, left_i, left_bound) by {
+        assert SortedLeft: OpaqueSortedBy(leq, cache, left_i, left_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+        assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
+        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
           reveal OpaqueSortedBy;
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
@@ -302,6 +305,9 @@ module BlockSortUnbound2 {
         assert target_i > target_start ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
         }
+        reveal SortedLeft;
+        reveal SortedRight;
+        reveal SortedTarget;
       }
 
 
@@ -333,15 +339,17 @@ module BlockSortUnbound2 {
           right_i := right_i + 1;
           target_i := target_i + 1;
 
-          assert OpaqueSortedBy(leq, a, right_i, right_bound) by {
+          assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
             reveal OpaqueSortedBy;
           }
-          assert OpaqueSortedBy(leq, a, target_start, target_i) by {
+          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
             reveal OpaqueSortedBy;
           }
           assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
             reveal OpaqueSortedBy;
           }
+          reveal SortedRight;
+          reveal SortedTarget;
         }
       }
 
