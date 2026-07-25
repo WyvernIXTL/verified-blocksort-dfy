@@ -151,7 +151,7 @@ module BlockSortUnbound2 {
 
         // left and right invariants
         invariant OpaqueSortedBy(leq, cache, left_i, left_bound)
-        invariant a[right_i..right_bound] == snap[right_i..right_bound]
+        invariant a[right_i..right_bound] == snap[right_i..right_bound] // OFTEN FAILS
         invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
         // bridge: last placed element is <= both candidates
@@ -194,7 +194,7 @@ module BlockSortUnbound2 {
         }
 
         assert AUpdatedTailRight: !left ==> a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
-        assert PermRight: !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+        assert PermRight: !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
           reveal AUpdatedTailRight;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
@@ -228,7 +228,7 @@ module BlockSortUnbound2 {
         assert left ==> left_i < left_bound ==> leq(a[target_i - 1], cache[left_i]) by {
           reveal OpaqueSortedBy;
         }
-        assert !left ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
+        assert !left ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by { // OFTEN FAILS
           reveal OpaqueSortedBy;
         }
         reveal SortedLeft;
@@ -279,7 +279,7 @@ module BlockSortUnbound2 {
           assert a[target_i] == cache[left_i];
           TailOfArray(a, target_start, target_i);
         }
-        assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
+        assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
           reveal AUpdatedTail;
@@ -342,7 +342,7 @@ module BlockSortUnbound2 {
           assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
             reveal OpaqueSortedBy;
           }
-          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
+          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
             reveal OpaqueSortedBy;
           }
           assert target_i > target_start ==> right_i < right_bound ==> leq(a[target_i - 1], a[right_i]) by {
