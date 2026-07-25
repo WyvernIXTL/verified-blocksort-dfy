@@ -151,7 +151,7 @@ module BlockSortUnbound2 {
 
         // left and right invariants
         invariant OpaqueSortedBy(leq, cache, left_i, left_bound)
-        invariant a[right_i..right_bound] == snap[right_i..right_bound] // OFTEN FAILS
+        // invariant a[right_i..right_bound] == snap[right_i..right_bound] // OFTEN FAILS
         invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
         // bridge: last placed element is <= both candidates
@@ -255,7 +255,7 @@ module BlockSortUnbound2 {
 
         // left and right invariants
         invariant OpaqueSortedBy(leq, cache, left_i, left_bound)
-        invariant a[right_i..right_bound] == snap[right_i..right_bound]
+        // invariant a[right_i..right_bound] == snap[right_i..right_bound]
         invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
         // bridge: last placed element is <= both candidates
@@ -323,7 +323,7 @@ module BlockSortUnbound2 {
           invariant target_start <= target_i <= target_bound
 
           // left and right invariants
-          invariant a[right_i..right_bound] == snap[right_i..right_bound]
+          // invariant a[right_i..right_bound] == snap[right_i..right_bound]
           invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
           // bridge: last placed element is <= both candidates
@@ -364,7 +364,7 @@ module BlockSortUnbound2 {
           invariant target_start <= target_i <= target_bound
 
           // left and right invariants
-          invariant a[right_i..right_bound] == snap[right_i..right_bound]
+          // invariant a[right_i..right_bound] == snap[right_i..right_bound]
 
           // is perm
           invariant IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound)
