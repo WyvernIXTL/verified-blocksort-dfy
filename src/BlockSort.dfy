@@ -207,11 +207,12 @@ module BlockSortUnbound2 {
           a[target_i] := a[right_i];
         }
 
+        assert AUpdatedTailRight: !left ==> a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
         assert PermRight: !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
           if !left {
             assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
               reveal IsPermutationInvariant;
-              assert a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
+              reveal AUpdatedTailRight;
               MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
               HeadOfCache(a, right_i, right_bound);
               assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
@@ -297,7 +298,7 @@ module BlockSortUnbound2 {
           TailOfArray(a, target_start, target_i);
         }
 
-        assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
+        assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by {
           reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
           reveal AUpdatedTail;
