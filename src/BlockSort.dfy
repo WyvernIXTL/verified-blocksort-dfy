@@ -56,6 +56,12 @@ module BlockSortUnbound2 {
       ensures a[lo..hi] + [a[hi]] == a[lo..hi+1]
     {}
 
+    lemma TailEqFollowsFromSeqEq<A(!new)>(a: seq<A>, b: seq<A>)
+      requires a == b
+      requires |a| > 0 || |b| > 0
+      ensures a[1..] == b[1..]
+    {}
+
     ghost predicate {:opaque} OpaqueSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
       reads a
       requires TotalOrdering(leq)
@@ -151,7 +157,7 @@ module BlockSortUnbound2 {
 
         // left and right invariants
         invariant OpaqueSortedBy(leq, cache, left_i, left_bound)
-        invariant a[right_i..right_bound] == snap[right_i..right_bound] // OFTEN FAILS
+        invariant a[right_i..right_bound] == snap[right_i..right_bound]
         invariant OpaqueSortedBy(leq, a, right_i, right_bound)
 
         // bridge: last placed element is <= both candidates
@@ -185,6 +191,8 @@ module BlockSortUnbound2 {
           assert left ==> multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
 
+        assert RightDoesNotChangePersist: left ==> a[right_i..right_bound] == snap[right_i..right_bound];
+
         if left {
           left_i := left_i + 1;
         }
@@ -202,6 +210,10 @@ module BlockSortUnbound2 {
           assert !left ==> multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
         }
 
+        assert RightDoesNotChangeUdate: !left ==> a[right_i+1..right_bound] == snap[right_i+1..right_bound] by {
+          TailEqFollowsFromSeqEq(a[right_i..right_bound], snap[right_i..right_bound]);
+        }
+
         if !left {
           right_i := right_i + 1;
         }
@@ -209,6 +221,13 @@ module BlockSortUnbound2 {
         target_i := target_i + 1;
 
 
+        assert RightDoesNotChange: a[right_i..right_bound] == snap[right_i..right_bound] by {
+          if left {
+            reveal RightDoesNotChangePersist;
+          } else {
+            reveal RightDoesNotChangeUdate;
+          }
+        }
         assert SortedLeft: OpaqueSortedBy(leq, cache, left_i, left_bound) by {
           reveal OpaqueSortedBy;
         }
@@ -234,6 +253,7 @@ module BlockSortUnbound2 {
         reveal SortedLeft;
         reveal SortedRight;
         reveal SortedTarget;
+        reveal RightDoesNotChange;
       }
 
       assert LeftOrRight: !(left_i < left_bound) || !(right_i < right_bound);
