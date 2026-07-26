@@ -46,9 +46,6 @@ module BlockSortUnbound {
 
   module BlockSortUnboundMergeImpl {
     import opened Std.Relations
-    import Std.Collections.Seq
-
-    import opened InsertionSortAdaptive
 
 
     /* ------------------------ Lemma and Predicates ------------------------ */
@@ -231,9 +228,7 @@ module BlockSortUnbound {
     }
 
 
-    /* ---------------------------------------------------------------------- */
-    /*                          Merge Implementation                          */
-    /* ---------------------------------------------------------------------- */
+    /* ------------------------ Merge Implementation ------------------------ */
 
     // merge two blocks together
     method Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
@@ -688,7 +683,6 @@ module BlockSortUnbound {
       // cache requirements
       requires cache != a
       requires mid - lo <= cache.Length
-      requires cache[0..mid-lo] == a[lo..mid]
 
       // requires sorted blocks
       requires OpaqueSortedBy(leq, a, lo, mid)
@@ -706,5 +700,28 @@ module BlockSortUnbound {
   }
 
 
+  /* ------------------------------------------------------------------------ */
+  /*                         Block Sort Implementation                        */
+  /* ------------------------------------------------------------------------ */
 
+  module BlockSortUnboundImpl {
+    import opened Std.Relations
+    import Std.Collections.Seq
+
+    import opened InsertionSortAdaptive
+    import opened BlockSortUnboundMergeImpl
+
+
+    method BlockSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
+      modifies a
+
+      // requires total ordering
+      requires TotalOrdering(leq)
+
+      // ensures sorted
+      ensures OpaqueSortedBy(leq, a, 0, a.Length)
+
+      // ensures is permutations
+      ensures IsPermutation(a[..], old(a[..]))
+  }
 }
