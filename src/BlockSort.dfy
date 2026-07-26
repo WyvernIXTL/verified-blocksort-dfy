@@ -307,10 +307,10 @@ module BlockSortUnbound {
 
         assert AUpdatedTailLeft: left ==> a[target_start..target_i] + [cache[left_i]] == a[target_start..target_i + 1];
         assert PermLeft: left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
-          reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
           reveal AUpdatedTailLeft;
           HeadOfCache(cache, left_i, left_bound);
+          reveal IsPermutationInvariant;
           assert left ==> multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
 
@@ -326,10 +326,10 @@ module BlockSortUnbound {
 
         assert AUpdatedTailRight: !left ==> a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1];
         assert PermRight: !left ==> IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
-          reveal IsPermutationInvariant;
-          reveal AUpdatedTailRight;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
+          reveal AUpdatedTailRight;
           HeadOfCache(a, right_i, right_bound);
+          reveal IsPermutationInvariant;
           assert !left ==> multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
         }
 
@@ -451,10 +451,10 @@ module BlockSortUnbound {
           TailOfArray(a, target_start, target_i);
         }
         assert Perm: IsPermutationInvariant(a, cache, cache_min_size, snap, left_i+1, left_bound, right_i, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
-          reveal IsPermutationInvariant;
           MultiSet5Slice(a[..], target_start, target_i + 1, right_i, target_bound);
           reveal AUpdatedTail;
           HeadOfCache(cache, left_i, left_bound);
+          reveal IsPermutationInvariant;
           assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
 
