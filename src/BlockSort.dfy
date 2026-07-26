@@ -205,7 +205,7 @@ module BlockSortUnbound {
     /* ---------------------------------------------------------------------- */
 
     // merge two blocks together
-    method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+    method Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
       modifies a
 
       // comparison predicate requirements
@@ -257,6 +257,8 @@ module BlockSortUnbound {
         reveal IsPermutationInvariant;
         MultiSet5Slice(a[..], target_start, target_i, right_i, target_bound);
       }
+
+      assert {:split_here} true;
 
       // merging left with right
       while left_i < left_bound && right_i < right_bound
@@ -311,7 +313,7 @@ module BlockSortUnbound {
           reveal AUpdatedTailLeft;
           HeadOfCache(cache, left_i, left_bound);
           reveal IsPermutationInvariant;
-          assert left ==> multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+          assert {:focus} left ==> multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
 
         assert RightDoesNotChangePersist: left ==> a[right_i..right_bound] == snap[right_i..right_bound];
@@ -330,7 +332,7 @@ module BlockSortUnbound {
           reveal AUpdatedTailRight;
           HeadOfCache(a, right_i, right_bound);
           reveal IsPermutationInvariant;
-          assert !left ==> multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
+          assert {:focus} !left ==> multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
         }
 
         assert RightDoesNotChangeUdate: !left ==> a[right_i+1..right_bound] == snap[right_i+1..right_bound] by {
@@ -407,6 +409,8 @@ module BlockSortUnbound {
         reveal LeftOrRightEq;
       }
 
+      assert {:split_here} true;
+
 
       // if right is exhausted copy left
       while left_i < left_bound
@@ -455,7 +459,7 @@ module BlockSortUnbound {
           reveal AUpdatedTail;
           HeadOfCache(cache, left_i, left_bound);
           reveal IsPermutationInvariant;
-          assert multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
+          assert {:focus} multiset(a[target_start..target_i + 1]) + multiset(cache[left_i + 1..left_bound]) == multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]);
         }
 
         left_i := left_i + 1;
@@ -493,6 +497,7 @@ module BlockSortUnbound {
         reveal SortedTarget;
       }
 
+      assert {:split_here} true;
 
       // if left is exhausted assert goal by asserting right side is allready in place
       assert OpaqueSortedBy(leq, a, target_start, target_bound) by {
@@ -557,6 +562,8 @@ module BlockSortUnbound {
         }
       }
 
+      assert {:split_here} true;
+
       assert IsPermutation(a[..], snap) by {
         var right_i := right_i;
         var target_i := target_i;
@@ -578,12 +585,12 @@ module BlockSortUnbound {
           assert AUpdate: a[target_start..target_i] + [a[right_i]] == a[target_start..target_i + 1] by {
             TailOfArray(a, target_start, target_i);
           }
-          assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by {
+          assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i+1, right_bound, target_start, target_i+1, target_bound) by { // EXPENSIVE
             reveal IsPermutationInvariant;
             reveal AUpdate;
             MultiSet5Slice(a[..], target_start, target_i + 1, right_i + 1, target_bound);
             HeadOfCache(a, right_i, right_bound);
-            assert multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
+            assert {:focus} multiset(a[target_start..target_i + 1]) + multiset(a[right_i + 1..right_bound]) == multiset(a[target_start..target_i]) + multiset(a[right_i..right_bound]);
           }
 
           right_i := right_i + 1;
