@@ -171,10 +171,33 @@ module BlockSortUnbound {
 
     lemma OpaqueSortedByEmpty<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat, target_i: nat)
       requires TotalOrdering(leq)
-      requires 0 <= target_start == target_i < a.Length
+      requires 0 <= target_start == target_i <= a.Length
       ensures OpaqueSortedBy(leq, a, target_start, target_i)
     {
       reveal OpaqueSortedBy;
+    }
+
+    lemma OpaqueSortedByTailFromBackup<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires OpaqueSortedBySeq(leq, backup)
+      requires lo <= hi <= a.Length
+      requires 2 <= |backup|
+      requires backup[1..] == a[lo..hi]
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+    }
+
+    lemma  OpaqueSortedByFromBackup<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires OpaqueSortedBySeq(leq, backup)
+      requires lo <= hi <= a.Length
+      requires backup == a[lo..hi]
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
     }
 
 
@@ -354,10 +377,28 @@ module BlockSortUnbound {
           }
         }
         assert SortedLeft: OpaqueSortedBy(leq, cache, left_i, left_bound) by {
-          reveal OpaqueSortedBy;
+          reveal LeftSortedBackup;
+          if !left {
+            OpaqueSortedByFromBackup(leq, snap_left, cache, left_i, left_bound);
+          } else {
+            if 2 <= |snap_left| {
+              OpaqueSortedByTailFromBackup(leq, snap_left, cache, left_i, left_bound);
+            } else {
+              OpaqueSortedByEmpty(leq, cache, left_i, left_bound);
+            }
+          }
         }
         assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
-          reveal OpaqueSortedBy;
+          reveal RightSortedBackup;
+          if left {
+            OpaqueSortedByFromBackup(leq, snap_right, a, right_i, right_bound);
+          } else {
+            if 2 <= |snap_right| {
+              OpaqueSortedByTailFromBackup(leq, snap_right, a, right_i, right_bound);
+            } else {
+              OpaqueSortedByEmpty(leq, a, right_i, right_bound);
+            }
+          }
         }
         assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
           if 2 <= target_i - target_start {
@@ -466,10 +507,15 @@ module BlockSortUnbound {
         target_i := target_i + 1;
 
         assert SortedLeft: OpaqueSortedBy(leq, cache, left_i, left_bound) by {
-          reveal OpaqueSortedBy;
+          reveal LeftSortedBackup;
+          if 2 <= |snap_left| {
+            OpaqueSortedByTailFromBackup(leq, snap_left, cache, left_i, left_bound);
+          } else {
+            OpaqueSortedByEmpty(leq, cache, left_i, left_bound);
+          }
         }
         assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
-          reveal OpaqueSortedBy;
+          OpaqueSortedByEmpty(leq, a, right_i, right_bound);
         }
         assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
           if 2 <= target_i - target_start {
@@ -537,7 +583,12 @@ module BlockSortUnbound {
           target_i := target_i + 1;
 
           assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
-            reveal OpaqueSortedBy;
+            reveal RightSortedBackup;
+            if 2 <= |snap_right| {
+              OpaqueSortedByTailFromBackup(leq, snap_right, a, right_i, right_bound);
+            } else {
+              OpaqueSortedByEmpty(leq, a, right_i, right_bound);
+            }
           }
           assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
             if 2 <= target_i - target_start {
