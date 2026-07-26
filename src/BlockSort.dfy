@@ -11,8 +11,14 @@
   Verified Block Sort in Dafny
 
   This module contains a verified implementation of block sort in the programming language Dafny.
-  This implementation is not in place! The ressource <https://every-algorithm.github.io/2023/11/27/block_sort.html>
-  was used for the implementation. Instead of creating a new array for every merge a single array is used.
+
+  This implementation of block sort is not in place! Instead a separate array is used to maintain a copy of a block.
+  Wikipedia mentions that variant of block sort "turns into a full-speed merge sort since all of the A subarrays 
+  will fit into it."[^1] The reason for choosing this variant is simply complexity.
+
+  If you are interested in block sort, have a look at these ressources:
+  - <https://every-algorithm.github.io/2023/11/27/block_sort.html>
+  - <https://en.wikipedia.org/wiki/Block_sort>
 
   I expect, without having done an analysis:
     
@@ -20,6 +26,8 @@
   | --------------------------- | ---------- |
   | worst-case space complexity | O(n/2)     |
 
+
+  [^1]: https://en.wikipedia.org/wiki/Block_sort#Variants
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
