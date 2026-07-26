@@ -25,19 +25,25 @@
 
 
 
-module BlockSortUnbound2 {
+module BlockSortUnbound {
   import opened Std.Relations
   import Std.Collections.Seq
 
   import opened InsertionSortAdaptive
 
 
-  module BlockSortUnboundImpl {
+  /* ------------------------------------------------------------------------ */
+  /*                           Merge Implementation                           */
+  /* ------------------------------------------------------------------------ */
+
+  module BlockSortUnboundMergeImpl {
     import opened Std.Relations
     import Std.Collections.Seq
 
     import opened InsertionSortAdaptive
 
+
+    /* ------------------------ Lemma and Predicates ------------------------ */
 
     lemma MultiSet5Slice<A(!new)>(a: seq<A>, i0: nat, i1: nat, i2: nat, i3: nat)
       requires i0 <= i1 <= i2 <= i3 <= |a|
@@ -86,35 +92,12 @@ module BlockSortUnbound2 {
       reveal OpaqueSortedBySeq;
     }
 
-    lemma OpaqueSortedByIfOpaqueSortedBySeqAndIrrellevantChange<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
-      requires TotalOrdering(leq)
-      requires OpaqueSortedBySeq(leq, backup)
-      requires lo < hi <= a.Length
-      requires backup == a[lo..hi]
-      ensures OpaqueSortedBy(leq, a, lo, hi)
-    {
-      reveal OpaqueSortedBy;
-      reveal OpaqueSortedBySeq;
-    }
-
     lemma HeadLeqNextIfOpaqueSortedBySeq<A(!new)>(leq: (A, A) -> bool, a: seq<A>)
       requires TotalOrdering(leq)
       requires OpaqueSortedBySeq(leq, a)
       requires 2 <= |a|
       ensures leq(a[0], a[1])
     {
-      reveal OpaqueSortedBySeq;
-    }
-
-    lemma TailOfOpaqueSortedBySeqEqArray<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
-      requires TotalOrdering(leq)
-      requires OpaqueSortedBySeq(leq, backup)
-      requires lo < hi <= a.Length
-      requires 0 < |backup|
-      requires backup[1..] == a[lo+1..hi]
-      ensures OpaqueSortedBy(leq, a, lo+1, hi)
-    {
-      reveal OpaqueSortedBy;
       reveal OpaqueSortedBySeq;
     }
 
@@ -128,7 +111,6 @@ module BlockSortUnbound2 {
     {
       assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-1]);
     }
-
 
     lemma OpaqueSortedByAddTail<A(!new)>(leq: (A, A) -> bool, snap_target_seq: seq<A>, a: array<A>, target_start: nat, target_i: nat, x: A, y: A)
       requires TotalOrdering(leq)
@@ -205,13 +187,10 @@ module BlockSortUnbound2 {
       multiset(a[..target_start]) + multiset(a[target_start..target_i]) + multiset(cache[left_i..left_bound]) + multiset(a[right_i..right_bound]) + multiset(a[target_bound..]) == multiset(snap)
     }
 
-    lemma LeqHeadFromSortedBy<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, hi: nat)
-      requires TotalOrdering(leq)
-      requires hi < a.Length
-      requires lo+1 < hi
-      requires SortedBy(leq, a[lo..hi])
-      ensures leq(a[lo], a[lo+1])
-    {}
+
+    /* ---------------------------------------------------------------------- */
+    /*                          Merge Implementation                          */
+    /* ---------------------------------------------------------------------- */
 
     // merge two blocks together
     method {:isolate_assertions} Merge<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
