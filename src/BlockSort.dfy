@@ -103,13 +103,17 @@ module BlockSortUnbound {
 
     lemma SortedByAddElement<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat, target_i: nat)
       requires TotalOrdering(leq)
-      requires 0 <= target_start < target_i < a.Length
+      requires 0 <= target_start < target_i <= a.Length
       requires SortedBy(leq, a[target_start..target_i-1])
       requires target_i - target_start >= 2
       requires leq(a[target_i-2], a[target_i-1])
       ensures SortedBy(leq, a[target_start..target_i])
     {
-      assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-1]);
+      assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-2]);
+      assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-2]) ==>
+                                                            leq(a[target_i-2], a[target_i-1]) ==>
+                                                              forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-1]);
+      assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-1]) ==> SortedBy(leq, a[target_start..target_i]);
     }
 
     lemma OpaqueSortedByAddTail<A(!new)>(leq: (A, A) -> bool, snap_target_seq: seq<A>, a: array<A>, target_start: nat, target_i: nat, x: A, y: A)
@@ -135,7 +139,7 @@ module BlockSortUnbound {
 
     lemma OpaqueSortedByAddTailSingle<A(!new)>(leq: (A, A) -> bool, snap_target_seq: seq<A>, a: array<A>, target_start: nat, target_i: nat, x: A)
       requires TotalOrdering(leq)
-      requires 0 <= target_start < target_i < a.Length
+      requires 0 <= target_start < target_i <= a.Length
       requires a[target_start..target_i-1] == snap_target_seq
       requires OpaqueSortedBySeq(leq, snap_target_seq)
       requires 2 <= target_i - target_start
@@ -161,6 +165,14 @@ module BlockSortUnbound {
       requires TotalOrdering(leq)
       requires 0 <= target_start < a.Length
       ensures OpaqueSortedBy(leq, a, target_start, target_start+1)
+    {
+      reveal OpaqueSortedBy;
+    }
+
+    lemma OpaqueSortedByEmpty<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat, target_i: nat)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start == target_i < a.Length
+      ensures OpaqueSortedBy(leq, a, target_start, target_i)
     {
       reveal OpaqueSortedBy;
     }
@@ -354,7 +366,7 @@ module BlockSortUnbound {
           } else if 1 == target_i - target_start {
             OpaqueSortedByFromElement(leq, a, target_start);
           } else {
-            reveal OpaqueSortedBy;
+            OpaqueSortedByEmpty(leq, a, target_start, target_i);
           }
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
@@ -455,22 +467,17 @@ module BlockSortUnbound {
         assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE && FAILS OFTEN
-          if target_i < target_bound {
-            if 2 <= target_i - target_start {
-              reveal TargetSortedBackup;
-              OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_left[0]);
-            } else if 2 == target_i - target_start {
-              OpaqueSortedByFromLeq(leq, a, target_start, target_i);
-            } else if 1 == target_i - target_start {
-              OpaqueSortedByFromElement(leq, a, target_start);
-            } else {
-              reveal OpaqueSortedBy;
-            }
+        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
+          if 2 <= target_i - target_start {
+            reveal TargetSortedBackup;
+            OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_left[0]);
+          } else if 2 == target_i - target_start {
+            OpaqueSortedByFromLeq(leq, a, target_start, target_i);
+          } else if 1 == target_i - target_start {
+            OpaqueSortedByFromElement(leq, a, target_start);
           } else {
-            reveal OpaqueSortedBy;
+            OpaqueSortedByEmpty(leq, a, target_start, target_i);
           }
-
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
           reveal Perm;
@@ -527,20 +534,16 @@ module BlockSortUnbound {
           assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
             reveal OpaqueSortedBy;
           }
-          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE && FAILS OFTEN
-            if target_i < target_bound {
-              if 2 <= target_i - target_start {
-                reveal TargetSortedBackup;
-                OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_right[0]);
-              } else if 2 == target_i - target_start {
-                OpaqueSortedByFromLeq(leq, a, target_start, target_i);
-              } else if 1 == target_i - target_start {
-                OpaqueSortedByFromElement(leq, a, target_start);
-              } else {
-                reveal OpaqueSortedBy;
-              }
+          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
+            if 2 <= target_i - target_start {
+              reveal TargetSortedBackup;
+              OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_right[0]);
+            } else if 2 == target_i - target_start {
+              OpaqueSortedByFromLeq(leq, a, target_start, target_i);
+            } else if 1 == target_i - target_start {
+              OpaqueSortedByFromElement(leq, a, target_start);
             } else {
-              reveal OpaqueSortedBy;
+              OpaqueSortedByEmpty(leq, a, target_start, target_i);
             }
           }
           assert right_i < right_bound ==> leq(a[target_i-1], a[right_i]) by {
