@@ -106,6 +106,83 @@ module BlockSortUnbound2 {
       reveal OpaqueSortedBySeq;
     }
 
+    lemma TailOfOpaqueSortedBySeqEqArray<A(!new)>(leq: (A, A) -> bool, backup: seq<A>, a: array<A>, lo: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires OpaqueSortedBySeq(leq, backup)
+      requires lo < hi <= a.Length
+      requires 0 < |backup|
+      requires backup[1..] == a[lo+1..hi]
+      ensures OpaqueSortedBy(leq, a, lo+1, hi)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+    }
+
+    lemma SortedByAddElement<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat, target_i: nat)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start < target_i < a.Length
+      requires SortedBy(leq, a[target_start..target_i-1])
+      requires target_i - target_start >= 2
+      requires leq(a[target_i-2], a[target_i-1])
+      ensures SortedBy(leq, a[target_start..target_i])
+    {
+      assert forall i | target_start <= i < target_i-1 :: leq(a[i], a[target_i-1]);
+    }
+
+
+    lemma OpaqueSortedByAddTail<A(!new)>(leq: (A, A) -> bool, snap_target_seq: seq<A>, a: array<A>, target_start: nat, target_i: nat, x: A, y: A)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start < target_i < a.Length
+      requires a[target_start..target_i-1] == snap_target_seq
+      requires OpaqueSortedBySeq(leq, snap_target_seq)
+      requires 2 <= target_i - target_start
+      requires leq(a[target_i-2], x)
+      requires leq(a[target_i-2], y)
+      ensures a[target_i-1] == x ==> OpaqueSortedBy(leq, a, target_start, target_i)
+      ensures a[target_i-1] == y ==> OpaqueSortedBy(leq, a, target_start, target_i)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+      if a[target_i-1] == x {
+        SortedByAddElement(leq, a, target_start, target_i);
+      }
+      if a[target_i-1] == y {
+        SortedByAddElement(leq, a, target_start, target_i);
+      }
+    }
+
+    lemma OpaqueSortedByAddTailSingle<A(!new)>(leq: (A, A) -> bool, snap_target_seq: seq<A>, a: array<A>, target_start: nat, target_i: nat, x: A)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start < target_i < a.Length
+      requires a[target_start..target_i-1] == snap_target_seq
+      requires OpaqueSortedBySeq(leq, snap_target_seq)
+      requires 2 <= target_i - target_start
+      requires leq(a[target_i-2], a[target_i-1])
+      ensures OpaqueSortedBy(leq, a, target_start, target_i)
+    {
+      reveal OpaqueSortedBy;
+      reveal OpaqueSortedBySeq;
+      SortedByAddElement(leq, a, target_start, target_i);
+    }
+
+    lemma OpaqueSortedByFromLeq<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat, target_i: nat)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start < target_i < a.Length
+      requires target_start + 1 == target_i
+      requires leq(a[target_start], a[target_start+1])
+      ensures OpaqueSortedBy(leq, a, target_start, target_i)
+    {
+      reveal OpaqueSortedBy;
+    }
+
+    lemma OpaqueSortedByFromElement<A(!new)>(leq: (A, A) -> bool, a: array<A>, target_start: nat)
+      requires TotalOrdering(leq)
+      requires 0 <= target_start < a.Length
+      ensures OpaqueSortedBy(leq, a, target_start, target_start+1)
+    {
+      reveal OpaqueSortedBy;
+    }
+
 
     ghost predicate {:opaque} IsPermutation<A(!new)>(a: seq<A>, old_a: seq<A>)
     {
@@ -226,6 +303,10 @@ module BlockSortUnbound2 {
         assert RightSortedBackup: OpaqueSortedBySeq(leq, snap_right) by {
           OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, right_i, right_bound);
         }
+        ghost var snap_target := a[target_start..target_i];
+        assert TargetSortedBackup: OpaqueSortedBySeq(leq, snap_target) by {
+          OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, target_start, target_i);
+        }
 
         var left := leq(cache[left_i], a[right_i]);
 
@@ -285,8 +366,17 @@ module BlockSortUnbound2 {
         assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
-          reveal OpaqueSortedBy;
+        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by {
+          if 2 <= target_i - target_start {
+            reveal TargetSortedBackup;
+            OpaqueSortedByAddTail(leq, snap_target, a, target_start, target_i, snap_left[0], snap_right[0]);
+          } else if 2 == target_i - target_start {
+            OpaqueSortedByFromLeq(leq, a, target_start, target_i);
+          } else if 1 == target_i - target_start {
+            OpaqueSortedByFromElement(leq, a, target_start);
+          } else {
+            reveal OpaqueSortedBy;
+          }
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
           if left {
@@ -358,6 +448,10 @@ module BlockSortUnbound2 {
         assert LeftSortedBackup: OpaqueSortedBySeq(leq, snap_left) by {
           OpaqueSortedBySeqFromOpaqueSortedBy(leq, cache, left_i, left_bound);
         }
+        ghost var snap_target := a[target_start..target_i];
+        assert TargetSortedBackup: OpaqueSortedBySeq(leq, snap_target) by {
+          OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, target_start, target_i);
+        }
 
         a[target_i] := cache[left_i];
 
@@ -382,8 +476,22 @@ module BlockSortUnbound2 {
         assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
           reveal OpaqueSortedBy;
         }
-        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
-          reveal OpaqueSortedBy;
+        assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE && FAILS OFTEN
+          if target_i < target_bound {
+            if 2 <= target_i - target_start {
+              reveal TargetSortedBackup;
+              OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_left[0]);
+            } else if 2 == target_i - target_start {
+              OpaqueSortedByFromLeq(leq, a, target_start, target_i);
+            } else if 1 == target_i - target_start {
+              OpaqueSortedByFromElement(leq, a, target_start);
+            } else {
+              reveal OpaqueSortedBy;
+            }
+          } else {
+            reveal OpaqueSortedBy;
+          }
+
         }
         assert IsPermutationInvariant(a, cache, cache_min_size, snap, left_i, left_bound, right_i, right_bound, target_start, target_i, target_bound) by {
           reveal Perm;
@@ -427,6 +535,10 @@ module BlockSortUnbound2 {
           assert RightSortedBackup: OpaqueSortedBySeq(leq, snap_right) by {
             OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, right_i, right_bound);
           }
+          ghost var snap_target := a[target_start..target_i];
+          assert TargetSortedBackup: OpaqueSortedBySeq(leq, snap_target) by {
+            OpaqueSortedBySeqFromOpaqueSortedBy(leq, a, target_start, target_i);
+          }
 
           assert a[target_i] == a[right_i];
 
@@ -436,8 +548,21 @@ module BlockSortUnbound2 {
           assert SortedRight: OpaqueSortedBy(leq, a, right_i, right_bound) by {
             reveal OpaqueSortedBy;
           }
-          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE
-            reveal OpaqueSortedBy;
+          assert SortedTarget: OpaqueSortedBy(leq, a, target_start, target_i) by { // EXPENSIVE && FAILS OFTEN
+            if target_i < target_bound {
+              if 2 <= target_i - target_start {
+                reveal TargetSortedBackup;
+                OpaqueSortedByAddTailSingle(leq, snap_target, a, target_start, target_i, snap_right[0]);
+              } else if 2 == target_i - target_start {
+                OpaqueSortedByFromLeq(leq, a, target_start, target_i);
+              } else if 1 == target_i - target_start {
+                OpaqueSortedByFromElement(leq, a, target_start);
+              } else {
+                reveal OpaqueSortedBy;
+              }
+            } else {
+              reveal OpaqueSortedBy;
+            }
           }
           assert right_i < right_bound ==> leq(a[target_i-1], a[right_i]) by {
             if right_i < right_bound {
@@ -493,7 +618,7 @@ module BlockSortUnbound2 {
     method CopySubarray<A(!new, ==)>(a: array<A>, lo: nat, hi: nat, b: array<A>)
       modifies b
       requires a != b
-      requires a.Length <= b.Length
+      requires hi - lo <= b.Length
       requires lo < hi <= a.Length
       ensures b[..hi-lo] == a[lo..hi]
     {
@@ -502,6 +627,34 @@ module BlockSortUnbound2 {
       }
     }
 
+    method MergeWithCopyToCache<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+      modifies a
+      modifies cache
+
+      // comparison predicate requirements
+      requires TotalOrdering(leq)
+
+      // indices requirements
+      requires lo < mid < hi <= a.Length
+
+      // cache requirements
+      requires cache != a
+      requires mid - lo <= cache.Length
+      requires cache[0..mid-lo] == a[lo..mid]
+
+      // requires sorted blocks
+      requires OpaqueSortedBy(leq, a, lo, mid)
+      requires OpaqueSortedBy(leq, a, mid, hi)
+
+      // ensures sorted
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+
+      // ensures is permutations
+      ensures IsPermutation(a[..], old(a[..]))
+    {
+      CopySubarray(a, lo, mid, cache);
+      Merge(leq, a, lo, mid, hi, cache);
+    }
   }
 
 
