@@ -719,6 +719,110 @@ module VerifiedBlockSort.BlockSortUnbound {
     import opened BlockSortUnboundMergeImpl
 
 
+    lemma OpaqueSortedByFromNeighbouringBlocksLeq<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat)
+      requires TotalOrdering(leq)
+      requires lo < mid < hi <= a.Length
+      requires OpaqueSortedBy(leq, a, lo, mid)
+      requires OpaqueSortedBy(leq, a, mid, hi)
+      requires leq(a[mid-1], a[mid])
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+      decreases hi - mid
+    {
+      reveal OpaqueSortedBy;
+      SortedByAddElement(leq, a, lo, mid+1);
+      if mid+1 < hi {
+        assert leq(a[mid], a[mid+1]);
+        OpaqueSortedByFromNeighbouringBlocksLeq(leq, a, lo, mid+1, hi);
+      }
+    }
+
+    lemma MultiSet4Slice<A(!new)>(a: seq<A>, i0: nat, i1: nat, i2: nat)
+      requires i0 <= i1 <= i2 <= |a|
+      ensures multiset(a[..i0]) + multiset(a[i0..i1]) + multiset(a[i1..i2]) + multiset(a[i2..]) == multiset(a)
+    {
+      assert a[..i0] + a[i0..i1] == a[..i1];
+      assert a[..i1] + a[i1..i2] == a[..i2];
+      assert (a[..i0]) + (a[i0..i1]) + (a[i1..i2]) + (a[i2..]) == (a);
+    }
+
+    method RotateWithCacheOccupied<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+      modifies a
+
+      requires TotalOrdering(leq)
+      requires a != cache
+      requires lo < mid < hi <= a.Length
+      requires mid-lo <= cache.Length
+      requires cache[0..mid-lo] == a[lo..mid]
+      requires OpaqueSortedBy(leq, a, lo, mid)
+      requires OpaqueSortedBy(leq, a, mid, hi)
+      requires leq(a[hi-1], a[lo])
+
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+      ensures IsPermutation(a[..], old(a[..]))
+    {
+      ghost var snap_a := a[..];
+
+      for i := 0 to hi-mid
+        invariant a[..lo] == snap_a[..lo]
+        invariant a[hi..] == snap_a[hi..]
+        invariant a[mid+i..hi] == snap_a[mid+i..hi]
+        invariant a[lo..lo+i] == snap_a[mid..mid+i]
+      {
+        a[lo+i] := a[mid+i];
+
+        assert a[lo..lo+i] == snap_a[mid..mid+i] ==>
+            a[lo..lo+i] + [a[lo+i]] == snap_a[mid..mid+i] + [a[lo+i]];
+        assert a[lo..lo+i] + [a[lo+i]] == snap_a[mid..mid+i] + [a[lo+i]] ==>
+            a[lo+i] == a[mid+i] ==>
+              a[lo..lo+i] + [a[lo+i]] == snap_a[mid..mid+i] + [a[mid+i]];
+        assert a[mid+i..hi] == snap_a[mid+i..hi] ==>
+            a[mid+i] == snap_a[mid+i];
+        assert a[lo..lo+i] + [a[lo+i]] == snap_a[mid..mid+i] + [a[mid+i]] ==>
+            a[mid+i] == snap_a[mid+i] ==>
+              a[lo..lo+i] + [a[lo+i]]  == snap_a[mid..mid+i] + [snap_a[mid+i]];
+        assert a[lo..lo+i] + [a[lo+i]]  == snap_a[mid..mid+i] + [snap_a[mid+i]] ==>
+            a[lo..lo+i+1]  == snap_a[mid..mid+i+1];
+      }
+
+      assert a[lo..lo+hi-mid] == snap_a[mid..hi];
+
+      for i := 0 to mid-lo
+        invariant a[..lo] == snap_a[..lo]
+        invariant a[hi..] == snap_a[hi..]
+        invariant a[lo..lo+hi-mid] == snap_a[mid..hi]
+        invariant lo+hi-mid+i <= hi
+        invariant cache[i..mid-lo] == snap_a[lo+i..mid]
+        invariant a[lo+hi-mid..lo+hi-mid+i] == snap_a[lo..lo+i]
+      {
+        a[lo+hi-mid+i] := cache[i];
+      }
+
+      assert {:split_here} true;
+
+      assert Perm: IsPermutation(a[..], snap_a) by {
+        assert multiset(a[lo..lo+hi-mid]) == multiset(snap_a[mid..hi]);
+        assert multiset(a[lo+hi-mid..hi]) == multiset(snap_a[lo..mid]);
+        assert multiset(a[..lo]) == multiset(snap_a[..lo]);
+        assert multiset(a[hi..]) == multiset(snap_a[hi..]);
+        assert multiset(a[..lo]) + multiset(a[lo..lo+hi-mid]) + multiset(a[lo+hi-mid..hi]) + multiset(a[hi..]) == multiset(snap_a[..lo]) + multiset(snap_a[mid..hi]) + multiset(snap_a[lo..mid]) + multiset(snap_a[hi..]);
+        assert {:focus} multiset(snap_a[..lo]) + multiset(snap_a[mid..hi]) + multiset(snap_a[lo..mid]) + multiset(snap_a[hi..]) == multiset(snap_a[..lo]) + multiset(snap_a[lo..mid]) + multiset(snap_a[mid..hi]) + multiset(snap_a[hi..]);
+        MultiSet4Slice(snap_a, lo, mid, hi);
+        MultiSet4Slice(a[..], lo, lo+hi-mid, hi);
+        reveal IsPermutation;
+      }
+      assert OpaqueSortedBy(leq, a, lo, hi) by {
+        assert leq(a[lo+hi-mid-1], a[lo+hi-mid]) by {
+          assert leq(snap_a[hi-1], snap_a[lo]);
+          assert a[lo..lo+hi-mid] == snap_a[mid..hi] ==> a[lo+hi-mid-1] == snap_a[hi-1];
+          assert {:focus} a[lo+hi-mid..hi] == snap_a[lo..mid] ==> a[lo+hi-mid] == snap_a[lo];
+        }
+        reveal OpaqueSortedBy;
+        OpaqueSortedByFromNeighbouringBlocksLeq(leq, a, lo, lo+hi-mid, hi);
+      }
+      reveal Perm;
+    }
+
+
     lemma Pow2_Log2(pow: nat)
       requires pow > 0
       ensures Power2.Pow2(Logarithm.Log(2, pow)) <= pow < Power2.Pow2(Logarithm.Log(2, pow) + 1)
