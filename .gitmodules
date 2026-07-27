@@ -1,0 +1,3 @@
+[submodule "dafny"]
+	path = dependencies/dafny
+	url = https://github.com/dafny-lang/dafny.git
