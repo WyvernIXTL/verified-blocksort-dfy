@@ -39,7 +39,7 @@ include "InsertionSort.dfy"
 
 
 module VerifiedBlockSort.BlockSortUnbound {
-  import opened Std.Relations
+  // import opened Std.Relations
 
 
   /* ------------------------------------------------------------------------ */
@@ -714,12 +714,15 @@ module VerifiedBlockSort.BlockSortUnbound {
     import Std.Arithmetic.Power2
     import Std.Arithmetic.Power
     import Std.Arithmetic.Logarithm
+    import Std.Arithmetic.DivMod
+    import opened Std.BoundedInts
 
-    import opened InsertionSortAdaptive
+    import InsertionSortUnbounded
+    import InsertionSortBoundedU32
     import opened BlockSortUnboundMergeImpl
 
 
-    lemma OpaqueSortedByFromNeighbouringBlocksLeq<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat)
+    lemma OpaqueSortedByFromNeighbouringBlocksLeq<A(!new)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat)
       requires TotalOrdering(leq)
       requires lo < mid < hi <= a.Length
       requires OpaqueSortedBy(leq, a, lo, mid)
@@ -861,11 +864,56 @@ module VerifiedBlockSort.BlockSortUnbound {
       Power.LemmaPowIncreases(2, Logarithm.Log(2, min), Logarithm.Log(2, n));
     }
 
-    method BlockSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
+    lemma FloorPowerOfTwoDivisableBy16(log2: nat)
+      requires 16 <= Power2.Pow2(log2)
+      ensures Power2.Pow2(log2) % 16 == 0
+    {
+      Power2.LemmaPow2MaskDiv2Auto();
+    }
+
+    method BlockSortParameters(length: nat) returns (lower_bound: nat, block_size: nat, block_count: nat)
+      requires 32 < length
+      ensures lower_bound < 32
+      ensures 16 <= block_size <= 32
+      ensures lower_bound + block_size * block_count == length
+    {
+      var length_log2 := Logarithm.Log(2, length);
+      var floored_power_of_two: nat := Power2.Pow2(length_log2);
+      assert floored_power_of_two <= length by {
+        Pow2_Log2(length);
+      }
+      assert length < floored_power_of_two * 2 by {
+        Pow2_Log2(length);
+      }
+      assert floored_power_of_two % 16 == 0 by {
+        FloorPowerOfTwoDivisableBy16(length_log2);
+      }
+      assert 32 * (floored_power_of_two / 16) == 2 * floored_power_of_two by {
+        DivMod.LemmaFundamentalDivMod(floored_power_of_two, 16);
+        calc {
+           32 * (floored_power_of_two / 16);
+        == 2 * 16 * (floored_power_of_two / 16);
+        == 2 * (16 * (floored_power_of_two / 16));
+        == 2 * (floored_power_of_two - (floored_power_of_two % 16));
+        == 2 * (floored_power_of_two - 0);
+        == 2 * floored_power_of_two;
+        }
+      }
+      assert length <= 32 * (floored_power_of_two / 16) by {
+        Pow2_Log2(length);
+      }
+      block_size := length / (floored_power_of_two / 16);
+      assert 16 <= block_size <= 32;
+      block_count := length / block_size;
+      lower_bound := length - (block_count * block_size);
+    }
+
+    method BlockSortByoCache<A(!new, ==)>(leq: (A, A) -> bool, cache: array<A>, a: array<A>)
       modifies a
 
       // requires total ordering
       requires TotalOrdering(leq)
+      requires (a.Length + 1) / 2 <= cache.Length
 
       // ensures sorted
       // ensures OpaqueSortedBy(leq, a, 0, a.Length)
@@ -873,19 +921,34 @@ module VerifiedBlockSort.BlockSortUnbound {
       // ensures is permutations
       // ensures IsPermutation(a[..], old(a[..]))
     {
-      if a.Length <= 16 {
-        InsertionSortAdaptive.InsertionSortArrayBy(leq, a);
+      ghost var snap := a[..];
+
+      // lower than the maximum block size
+      if a.Length <= 32 {
+        InsertionSortBoundedU32.InsertionSortArrayBy(leq, a);
         return;
       }
 
-      var power_of_two := FloorPowerOfTwo(a.Length);
-      var denominator := power_of_two / 16;
+      // parameters
+      var lower_bound: nat, block_size: nat, block_count: nat := BlockSortParameters(a.Length);
 
-      assert 0 < denominator by {
-        FloorPowerOfTwoMinimum(16, a.Length);
+      // insertion sort blocks
+      if a.Length <= UINT32_MAX as nat {
+        InsertionSortBoundedU32.InsertionSortSubarrayBy(leq, a, 0, lower_bound as uint32);
+
+        for i := 0 to block_count {
+          InsertionSortBoundedU32.InsertionSortSubarrayBy(leq, a, (lower_bound + block_size * i) as uint32, (lower_bound + block_size * (i + 1)) as uint32);
+        }
+      } else {
+        InsertionSortUnbounded.InsertionSortSubarrayBy(leq, a, 0, lower_bound);
+
+        for i := 0 to block_count {
+          InsertionSortUnbounded.InsertionSortSubarrayBy(leq, a, lower_bound + block_size * i, lower_bound + block_size * (i + 1));
+        }
       }
-      var numerator_step := a.Length % denominator;
-      var integer_step := a.Length / denominator;
+
+
+      // TODO: Merging
     }
   }
 }
