@@ -2,6 +2,6 @@ includes = ["src/**/*.dfy"]
 
 [options]
 enforce-determinism = true
-standard-libraries = true
 cores = "100%"
 verification-time-limit = 40
+output = "transpiled/verified-blocksort"

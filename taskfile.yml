@@ -15,3 +15,7 @@ tasks:
   # measure-complexity-insertion-sort:
   #   cmds:
   #     - dafny measure-complexity src/InsertionSort.dfy --log-format csv --mutations 10 --standard-libraries
+
+  translate-rs:
+    cmds:
+      - dafny translate rs dfyconfig.toml

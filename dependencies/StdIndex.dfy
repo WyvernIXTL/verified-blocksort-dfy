@@ -1,0 +1,20 @@
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Relations.dfy"
+
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Wrappers.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Math.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Collections/Seq.dfy"
+
+include "./dafny/Source/DafnyStandardLibraries/src/Std/BoundedInts.dfy"
+
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/GeneralInternals.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/ModInternalsNonlinear.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/ModInternals.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/DivInternalsNonlinear.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/DivInternals.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/DivMod.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/MulInternalsNonlinear.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Internal/MulInternals.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Mul.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Power.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Power2.dfy"
+include "./dafny/Source/DafnyStandardLibraries/src/Std/Arithmetic/Logarithm.dfy"

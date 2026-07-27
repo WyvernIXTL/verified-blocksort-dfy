@@ -32,6 +32,9 @@
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
 
+// small part of standard library
+include "../../dependencies/StdIndex.dfy"
+
 include "InsertionSort.dfy"
 
 
@@ -664,7 +667,9 @@ module VerifiedBlockSort.BlockSortUnbound {
       requires lo < hi <= a.Length
       ensures b[..hi-lo] == a[lo..hi]
     {
-      forall i | 0 <= i < hi-lo {
+      for i := 0 to hi-lo
+        invariant b[..i] == a[lo..lo+i]
+      {
         b[i] := a[lo+i];
       }
     }

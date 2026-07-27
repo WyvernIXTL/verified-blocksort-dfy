@@ -36,6 +36,11 @@
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
+
+// small part of standard library
+include "../../dependencies/StdIndex.dfy"
+
+
 module VerifiedBlockSort.InsertionSortAdaptive {
   import opened Std.Relations
   import Std.Collections.Seq
