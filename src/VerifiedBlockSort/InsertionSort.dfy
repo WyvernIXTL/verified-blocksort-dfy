@@ -36,7 +36,7 @@
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
-module InsertionSortAdaptive {
+module VerifiedBlockSort.InsertionSortAdaptive {
   import opened Std.Relations
   import Std.Collections.Seq
   import opened Std.BoundedInts
@@ -95,7 +95,7 @@ module InsertionSortAdaptive {
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
-module InsertionSortUnbounded {
+module VerifiedBlockSort.InsertionSortUnbounded {
   import opened Std.Relations
   import Std.Collections.Seq
 
@@ -299,7 +299,7 @@ module InsertionSortUnbounded {
 
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
-module InsertionSortBoundedU32 {
+module VerifiedBlockSort.InsertionSortBoundedU32 {
   import opened Std.Relations
   import Std.Collections.Seq
   import opened Std.BoundedInts

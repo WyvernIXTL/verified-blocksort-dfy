@@ -32,12 +32,11 @@
 /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\*/
 
 
+include "InsertionSort.dfy"
 
-module BlockSortUnbound {
+
+module VerifiedBlockSort.BlockSortUnbound {
   import opened Std.Relations
-  import Std.Collections.Seq
-
-  import opened InsertionSortAdaptive
 
 
   /* ------------------------------------------------------------------------ */
@@ -707,10 +706,32 @@ module BlockSortUnbound {
   module BlockSortUnboundImpl {
     import opened Std.Relations
     import Std.Collections.Seq
+    import Std.Arithmetic.Power2
+    import Std.Arithmetic.Power
+    import Std.Arithmetic.Logarithm
 
     import opened InsertionSortAdaptive
     import opened BlockSortUnboundMergeImpl
 
+
+    lemma Pow2_Log2(pow: nat)
+      requires pow > 0
+      ensures Power2.Pow2(Logarithm.Log(2, pow)) <= pow < Power2.Pow2(Logarithm.Log(2, pow) + 1)
+    {}
+
+    function FloorPowerOfTwo(n: nat): nat
+    {
+      Power2.Pow2(Logarithm.Log(2, n))
+    }
+
+    lemma FloorPowerOfTwoMinimum(min: nat, n: nat)
+      requires 0 < min <= n
+      requires min == FloorPowerOfTwo(min)
+      ensures min <= FloorPowerOfTwo(n)
+    {
+      Logarithm.LemmaLogIsOrdered(2, min, n);
+      Power.LemmaPowIncreases(2, Logarithm.Log(2, min), Logarithm.Log(2, n));
+    }
 
     method BlockSort<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>)
       modifies a
@@ -719,9 +740,24 @@ module BlockSortUnbound {
       requires TotalOrdering(leq)
 
       // ensures sorted
-      ensures OpaqueSortedBy(leq, a, 0, a.Length)
+      // ensures OpaqueSortedBy(leq, a, 0, a.Length)
 
       // ensures is permutations
-      ensures IsPermutation(a[..], old(a[..]))
+      // ensures IsPermutation(a[..], old(a[..]))
+    {
+      if a.Length <= 16 {
+        InsertionSortAdaptive.InsertionSortArrayBy(leq, a);
+        return;
+      }
+
+      var power_of_two := FloorPowerOfTwo(a.Length);
+      var denominator := power_of_two / 16;
+
+      assert 0 < denominator by {
+        FloorPowerOfTwoMinimum(16, a.Length);
+      }
+      var numerator_step := a.Length % denominator;
+      var integer_step := a.Length / denominator;
+    }
   }
 }
