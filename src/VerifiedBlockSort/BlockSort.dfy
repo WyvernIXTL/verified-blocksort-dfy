@@ -822,6 +822,25 @@ module VerifiedBlockSort.BlockSortUnbound {
       reveal Perm;
     }
 
+    method RotateWithCache<A(!new, ==)>(leq: (A, A) -> bool, a: array<A>, lo: nat, mid: nat, hi: nat, cache: array<A>)
+      modifies a
+      modifies cache
+
+      requires TotalOrdering(leq)
+      requires a != cache
+      requires lo < mid < hi <= a.Length
+      requires mid-lo <= cache.Length
+      requires OpaqueSortedBy(leq, a, lo, mid)
+      requires OpaqueSortedBy(leq, a, mid, hi)
+      requires leq(a[hi-1], a[lo])
+
+      ensures OpaqueSortedBy(leq, a, lo, hi)
+      ensures IsPermutation(a[..], old(a[..]))
+    {
+      CopySubarray(a, lo, mid, cache);
+      RotateWithCacheOccupied(leq, a, lo, mid, hi, cache);
+    }
+
 
     lemma Pow2_Log2(pow: nat)
       requires pow > 0
